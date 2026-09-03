@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional, Tuple, Dict, Any
-from sqlalchemy import select, func, desc
+from sqlalchemy import select, func, desc, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -57,10 +57,55 @@ class VacancyService:
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def get_all_vacancies(session: AsyncSession, status_filter: Optional[str] = None) -> List[Vacancy]:
+    async def get_all_vacancies(
+        session: AsyncSession,
+        status_filter: Optional[str] = None,
+        search: Optional[str] = None,
+        department: Optional[str] = None,
+        from_date: Optional[datetime] = None,
+        to_date: Optional[datetime] = None
+    ) -> List[Vacancy]:
         stmt = select(Vacancy).options(selectinload(Vacancy.applications)).order_by(desc(Vacancy.created_at))
-        if status_filter:
+        if status_filter and status_filter != "all":
             stmt = stmt.where(Vacancy.status == status_filter)
+        if department and department != "all":
+            stmt = stmt.where(Vacancy.department == department)
+        if from_date:
+            stmt = stmt.where(Vacancy.created_at >= from_date)
+        if to_date:
+            stmt = stmt.where(Vacancy.created_at <= to_date)
+        if search and search.strip():
+            term = f"%{search.strip()}%"
+            stmt = stmt.where(
+                or_(
+                    Vacancy.title.ilike(term),
+                    Vacancy.vacancy_code.ilike(term),
+                    Vacancy.department.ilike(term),
+                    Vacancy.location.ilike(term),
+                    Vacancy.skills.ilike(term)
+                )
+            )
+        result = await session.execute(stmt)
+        return list(result.scalars().all())
+
+    @staticmethod
+    async def get_departments(session: AsyncSession) -> List[str]:
+        stmt = select(Vacancy.department).where(Vacancy.department.is_not(None)).distinct()
+        res = await session.execute(stmt)
+        depts = [r[0] for r in res.all() if r[0] and r[0].strip()]
+        return sorted(list(set(depts)))
+
+    @staticmethod
+    async def get_jd_files(
+        session: AsyncSession,
+        from_date: Optional[datetime] = None,
+        to_date: Optional[datetime] = None
+    ) -> List[JDFile]:
+        stmt = select(JDFile).options(selectinload(JDFile.vacancy)).order_by(desc(JDFile.uploaded_at))
+        if from_date:
+            stmt = stmt.where(JDFile.uploaded_at >= from_date)
+        if to_date:
+            stmt = stmt.where(JDFile.uploaded_at <= to_date)
         result = await session.execute(stmt)
         return list(result.scalars().all())
 

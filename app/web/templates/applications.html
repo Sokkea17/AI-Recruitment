@@ -6,7 +6,7 @@
 {% block page_subtext %}Review, filter, schedule interviews, and manage candidate recruitment records.{% endblock %}
 
 {% block topbar_actions %}
-<a href="/applications/export/csv{% if current_status %}?status={{ current_status }}{% endif %}" class="btn btn-secondary btn-sm" title="Export as CSV">
+<a href="/applications/export/csv?q={{ search_query }}&vacancy_id={{ current_vacancy or '' }}&department={{ current_dept }}&status={{ current_status }}&fit={{ current_fit }}&from_date={{ from_date }}&to_date={{ to_date }}" class="btn btn-secondary btn-sm" title="Export as CSV">
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
     <polyline points="7 10 12 15 17 10"></polyline>
@@ -17,52 +17,96 @@
 {% endblock %}
 
 {% block content %}
-<!-- Filter Toolbar -->
+<!-- Filter Toolbar (PART 1 & PART 2) -->
 <div class="section-panel" style="margin-bottom: 20px;">
-  <form method="GET" action="/applications" style="padding: 16px 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
-    <!-- Search Input -->
-    <div style="flex: 1; min-width: 220px;">
-      <input type="text" name="q" value="{{ search_query or '' }}" placeholder="Search by candidate name, email, or phone..." class="form-control">
+  <form method="GET" action="/applications" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 14px;">
+    <!-- Row 1: Keyword, Position, Department, Status, Fit -->
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+      <!-- Search Input -->
+      <div style="flex: 1.5; min-width: 230px;">
+        <input type="text" name="q" value="{{ search_query or '' }}" placeholder="Search candidate name, email, or phone..." class="form-control">
+      </div>
+
+      <!-- Position Filter -->
+      <div style="flex: 1; min-width: 170px;">
+        <select name="vacancy_id" class="form-control">
+          <option value="">All Positions</option>
+          {% for v in vacancies %}
+            <option value="{{ v.id }}" {% if current_vacancy == v.id %}selected{% endif %}>{{ v.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Department Filter -->
+      <div style="flex: 1; min-width: 150px;">
+        <select name="department" class="form-control">
+          <option value="">All Departments</option>
+          {% for dept in departments %}
+            <option value="{{ dept }}" {% if current_dept == dept %}selected{% endif %}>{{ dept }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Status Filter -->
+      <div style="flex: 1; min-width: 170px;">
+        <select name="status" class="form-control">
+          <option value="">All Statuses & Stages</option>
+          {% for st in all_statuses %}
+            <option value="{{ st }}" {% if current_status == st %}selected{% endif %}>{{ st }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- AI Fit Filter -->
+      <div style="flex: 1; min-width: 150px;">
+        <select name="fit" class="form-control">
+          <option value="all">All AI Fit Tiers</option>
+          <option value="strong" {% if current_fit == 'strong' %}selected{% endif %}>Strong Fit (&ge; 80%)</option>
+          <option value="moderate" {% if current_fit == 'moderate' %}selected{% endif %}>Moderate Fit (65-79%)</option>
+          <option value="review" {% if current_fit == 'review' %}selected{% endif %}>Review Required (&lt; 65%)</option>
+        </select>
+      </div>
     </div>
 
-    <!-- Position Filter -->
-    <div style="width: 200px;">
-      <select name="vacancy_id" class="form-control">
-        <option value="">All Positions</option>
-        {% for v in vacancies %}
-          <option value="{{ v.id }}" {% if current_vacancy == v.id %}selected{% endif %}>{{ v.title }}</option>
-        {% endfor %}
-      </select>
-    </div>
+    <!-- Row 2: Date Range Selection & Actions -->
+    <div style="display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+        <span style="font-size: 12.5px; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          <span>Submission Date Range:</span>
+        </span>
 
-    <!-- Status Filter (including Interview stages) -->
-    <div style="width: 190px;">
-      <select name="status" class="form-control">
-        <option value="">All Statuses & Stages</option>
-        {% for st in all_statuses %}
-          <option value="{{ st }}" {% if current_status == st %}selected{% endif %}>{{ st }}</option>
-        {% endfor %}
-      </select>
-    </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="font-size: 12px; color: var(--text-secondary); font-weight: 600;">From</label>
+          <input type="date" name="from_date" value="{{ from_date }}" class="form-control" style="width: 155px; padding: 5px 10px; font-size: 12.5px;">
+        </div>
 
-    <!-- AI Fit Filter -->
-    <div style="width: 170px;">
-      <select name="fit" class="form-control">
-        <option value="all">All AI Fit Tiers</option>
-        <option value="strong" {% if current_fit == 'strong' %}selected{% endif %}>Strong Fit (&ge; 80%)</option>
-        <option value="moderate" {% if current_fit == 'moderate' %}selected{% endif %}>Moderate Fit (65-79%)</option>
-        <option value="review" {% if current_fit == 'review' %}selected{% endif %}>Review Required (&lt; 65%)</option>
-      </select>
-    </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="font-size: 12px; color: var(--text-secondary); font-weight: 600;">To</label>
+          <input type="date" name="to_date" value="{{ to_date }}" class="form-control" style="width: 155px; padding: 5px 10px; font-size: 12.5px;">
+        </div>
+      </div>
 
-    <!-- Submit & Clear -->
-    <div style="display: flex; gap: 8px;">
-      <button type="submit" class="btn btn-primary btn-sm">Filter</button>
-      {% if search_query or current_status or current_vacancy or current_fit %}
-        <a href="/applications" class="btn btn-secondary btn-sm" title="Clear Filters">Clear</a>
-      {% endif %}
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 8px;">
+        <button type="submit" class="btn btn-primary btn-sm">Apply Filter</button>
+        {% if search_query or current_status or current_vacancy or current_dept or current_fit != 'all' or from_date or to_date %}
+          <a href="/applications" class="btn btn-secondary btn-sm" title="Clear All Filters">Clear Filter</a>
+        {% endif %}
+      </div>
     </div>
   </form>
+
+  {% if date_error %}
+    <div style="background: var(--danger-bg); border-top: 1px solid var(--danger-border); color: var(--danger); padding: 10px 20px; font-size: 12.5px; font-weight: 600;">
+      ⚠️ {{ date_error }}
+    </div>
+  {% endif %}
 </div>
 
 <!-- Candidate Applications Table -->

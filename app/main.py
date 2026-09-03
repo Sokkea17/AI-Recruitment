@@ -21,6 +21,7 @@ from app.web.routes.vacancy_routes import router as vacancy_router
 from app.web.routes.application_routes import router as application_router
 from app.web.routes.candidate_routes import router as candidate_router
 from app.web.routes.settings_routes import router as settings_router
+from app.web.routes.interview_routes import router as interview_router
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -101,6 +102,7 @@ app.include_router(dashboard_router)
 app.include_router(vacancy_router)
 app.include_router(application_router)
 app.include_router(candidate_router)
+app.include_router(interview_router)
 app.include_router(settings_router)
 
 def run_cli():

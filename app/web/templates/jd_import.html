@@ -123,6 +123,95 @@
   </div>
 
 </div>
+
+  <!-- Imported JD Files History (PART 1.F) -->
+  <div class="section-panel" style="margin-top: 24px;">
+    <div class="section-panel-header" style="flex-wrap: wrap; gap: 14px;">
+      <div>
+        <h3 style="font-size: 14.5px; font-weight: 700; color: var(--text-primary);">Imported Documents History</h3>
+        <p style="font-size: 12px; color: var(--text-secondary);">Archive of all uploaded Job Description documents</p>
+      </div>
+
+      <!-- Date Range Filter -->
+      <form method="GET" action="/vacancies/import-jd" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <label style="font-size: 11.5px; color: var(--text-secondary); font-weight: 600;">From</label>
+          <input type="date" name="from_date" value="{{ from_date }}" class="form-control" style="width: 140px; padding: 4px 8px; font-size: 12px;">
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <label style="font-size: 11.5px; color: var(--text-secondary); font-weight: 600;">To</label>
+          <input type="date" name="to_date" value="{{ to_date }}" class="form-control" style="width: 140px; padding: 4px 8px; font-size: 12px;">
+        </div>
+
+        <div style="display: flex; gap: 6px;">
+          <button type="submit" class="btn btn-primary btn-sm" style="padding: 4px 10px; font-size: 12px;">Filter</button>
+          {% if from_date or to_date %}
+            <a href="/vacancies/import-jd" class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 12px;">Clear</a>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+
+    {% if date_error %}
+      <div style="background: var(--danger-bg); border-top: 1px solid var(--danger-border); color: var(--danger); padding: 8px 20px; font-size: 12px; font-weight: 600;">
+        ⚠️ {{ date_error }}
+      </div>
+    {% endif %}
+
+    {% if jd_files %}
+      <div class="table-scroller">
+        <table class="saas-table">
+          <thead>
+            <tr>
+              <th>Document Filename</th>
+              <th>Linked Vacancy</th>
+              <th>File Size</th>
+              <th>Uploaded Date</th>
+              <th style="text-align: right;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for jf in jd_files %}
+              <tr>
+                <td>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 16px;">📄</span>
+                    <span style="font-weight: 600; color: var(--text-primary);">{{ jf.original_filename }}</span>
+                  </div>
+                </td>
+                <td>
+                  {% if jf.vacancy %}
+                    <a href="/vacancies/{{ jf.vacancy.id }}/edit" style="color: var(--primary); text-decoration: none; font-weight: 600;">
+                      {{ jf.vacancy.title }} ({{ jf.vacancy.vacancy_code }})
+                    </a>
+                  {% else %}
+                    <span style="color: var(--text-tertiary); font-size: 12px;">Extracted / Unlinked</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span style="color: var(--text-secondary); font-size: 12px;">{{ (jf.file_size / 1024)|round(1) }} KB</span>
+                </td>
+                <td>
+                  <span style="color: var(--text-secondary); font-size: 12px;">{{ format_datetime(jf.uploaded_at) }}</span>
+                </td>
+                <td style="text-align: right;">
+                  <span class="status-pill badge-info">Parsed</span>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state" style="padding: 24px 16px;">
+        <div class="empty-icon" style="font-size: 24px;">📁</div>
+        <h4 class="empty-title" style="font-size: 13.5px;">No imported documents found</h4>
+        <p class="empty-desc" style="font-size: 12px;">Upload a JD document above to automatically index and parse positions.</p>
+      </div>
+    {% endif %}
+  </div>
+
 {% endblock %}
 
 {% block extra_scripts %}

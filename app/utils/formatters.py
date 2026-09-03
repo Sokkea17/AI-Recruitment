@@ -1,7 +1,7 @@
 import re
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 
 CAMBODIA_TZ = ZoneInfo("Asia/Phnom_Penh")
 
@@ -186,3 +186,36 @@ def parse_structured_ai_summary(application) -> Dict[str, Any]:
         "assessment": assessment,
         "last_generated": format_datetime(application.updated_at or application.submitted_at)
     }
+
+def parse_date_range_to_utc(
+    from_date_str: Optional[str],
+    to_date_str: Optional[str]
+) -> Tuple[Optional[datetime], Optional[datetime], Optional[str]]:
+    """
+    Parses 'YYYY-MM-DD' from_date and to_date in Cambodia Time (Asia/Phnom_Penh, UTC+7).
+    Returns (from_utc, to_utc, error_message).
+    Ensures to_utc includes the entire day (up to 23:59:59.999999 local time converted to UTC).
+    """
+    from_utc = None
+    to_utc = None
+    error_msg = None
+
+    try:
+        from_d = datetime.strptime(from_date_str.strip(), "%Y-%m-%d").date() if from_date_str and from_date_str.strip() else None
+        to_d = datetime.strptime(to_date_str.strip(), "%Y-%m-%d").date() if to_date_str and to_date_str.strip() else None
+
+        if from_d and to_d and from_d > to_d:
+            return None, None, "From Date cannot be later than To Date."
+
+        if from_d:
+            from_local = datetime.combine(from_d, datetime.min.time(), tzinfo=CAMBODIA_TZ)
+            from_utc = from_local.astimezone(timezone.utc).replace(tzinfo=None)
+
+        if to_d:
+            to_local = datetime.combine(to_d, datetime.max.time(), tzinfo=CAMBODIA_TZ)
+            to_utc = to_local.astimezone(timezone.utc).replace(tzinfo=None)
+
+    except Exception as e:
+        error_msg = f"Invalid date format: {str(e)}"
+
+    return from_utc, to_utc, error_msg

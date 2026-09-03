@@ -12,6 +12,43 @@
 {% endblock %}
 
 {% block content %}
+<!-- Filter Toolbar (PART 1.D & PART 2 — Section 9) -->
+<div class="section-panel" style="margin-bottom: 20px;">
+  <form method="GET" action="/candidates" style="padding: 16px 20px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between;">
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; flex: 1;">
+      <!-- Search Input -->
+      <div style="flex: 1.5; min-width: 250px;">
+        <input type="text" name="q" value="{{ search_query or '' }}" placeholder="Search candidate name, email, phone, or Telegram..." class="form-control">
+      </div>
+
+      <!-- Registration Date Range -->
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <label style="font-size: 12px; color: var(--text-secondary); font-weight: 600;">From</label>
+        <input type="date" name="from_date" value="{{ from_date }}" class="form-control" style="width: 150px; padding: 5px 10px; font-size: 12.5px;">
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <label style="font-size: 12px; color: var(--text-secondary); font-weight: 600;">To</label>
+        <input type="date" name="to_date" value="{{ to_date }}" class="form-control" style="width: 150px; padding: 5px 10px; font-size: 12.5px;">
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div style="display: flex; gap: 8px;">
+      <button type="submit" class="btn btn-primary btn-sm">Apply Filter</button>
+      {% if search_query or from_date or to_date %}
+        <a href="/candidates" class="btn btn-secondary btn-sm" title="Clear All Filters">Clear Filter</a>
+      {% endif %}
+    </div>
+  </form>
+
+  {% if date_error %}
+    <div style="background: var(--danger-bg); border-top: 1px solid var(--danger-border); color: var(--danger); padding: 10px 20px; font-size: 12.5px; font-weight: 600;">
+      ⚠️ {{ date_error }}
+    </div>
+  {% endif %}
+</div>
+
 <div class="section-panel">
   <div class="section-panel-header">
     <div>
@@ -81,8 +118,11 @@
   {% else %}
     <div class="empty-state">
       <div class="empty-icon">👥</div>
-      <h4 class="empty-title">No candidates found</h4>
-      <p class="empty-desc">Candidates will be automatically indexed here when they submit applications via Telegram.</p>
+      <h4 class="empty-title">No candidates match your selected filters</h4>
+      <p class="empty-desc">Try adjusting your search terms or clearing the date filter.</p>
+      <div style="margin-top: 12px;">
+        <a href="/candidates" class="btn btn-secondary btn-sm">Clear Filter</a>
+      </div>
     </div>
   {% endif %}
 </div>

@@ -11,7 +11,7 @@ from app.models.user import User
 from app.web.auth import get_current_user_required
 from app.services.vacancy_service import vacancy_service
 from app.schemas.vacancy import VacancyCreate, VacancyUpdate
-from app.utils.formatters import get_status_badge_class, get_candidate_initials, calculate_preliminary_fit, format_date_only, format_datetime
+from app.utils.formatters import get_status_badge_class, get_candidate_initials, calculate_preliminary_fit, format_date_only, format_datetime, parse_date_range_to_utc
 
 router = APIRouter(prefix="/vacancies")
 templates = Jinja2Templates(directory=os.path.join(settings.BASE_DIR, "app/web/templates"))
@@ -27,28 +27,65 @@ templates.env.globals["get_badge_class"] = get_status_badge_class
 async def list_vacancies(
     request: Request,
     status: Optional[str] = None,
+    department: Optional[str] = None,
+    q: Optional[str] = None,
+    from_date: Optional[str] = None,
+    to_date: Optional[str] = None,
     current_user: User = Depends(get_current_user_required),
     session: AsyncSession = Depends(get_db)
 ):
-    vacancies = await vacancy_service.get_all_vacancies(session, status_filter=status)
-    return templates.TemplateResponse(request=request, name="vacancies.html", context={
+    from_utc, to_utc, date_error = parse_date_range_to_utc(from_date, to_date)
+    vacancies = await vacancy_service.get_all_vacancies(
+        session=session,
+        status_filter=status,
+        search=q,
+        department=department,
+        from_date=from_utc,
+        to_date=to_utc
+    )
+    departments = await vacancy_service.get_departments(session)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="vacancies.html",
+        context={
             "request": request,
             "current_user": current_user,
             "vacancies": vacancies,
-            "current_status": status,
+            "departments": departments,
+            "current_status": status or "",
+            "current_dept": department or "",
+            "search_query": q or "",
+            "from_date": from_date or "",
+            "to_date": to_date or "",
+            "date_error": date_error,
             "active_nav": "vacancies"
-        })
+        }
+    )
 
 @router.get("/import-jd", response_class=HTMLResponse)
 async def import_jd_page(
     request: Request,
-    current_user: User = Depends(get_current_user_required)
+    from_date: Optional[str] = None,
+    to_date: Optional[str] = None,
+    current_user: User = Depends(get_current_user_required),
+    session: AsyncSession = Depends(get_db)
 ):
-    return templates.TemplateResponse(request=request, name="jd_import.html", context={
+    from_utc, to_utc, date_error = parse_date_range_to_utc(from_date, to_date)
+    jd_files = await vacancy_service.get_jd_files(session, from_date=from_utc, to_date=to_utc)
+    return templates.TemplateResponse(
+        request=request,
+        name="jd_import.html",
+        context={
             "request": request,
             "current_user": current_user,
+            "jd_files": jd_files,
+            "from_date": from_date or "",
+            "to_date": to_date or "",
+            "date_error": date_error,
             "active_nav": "jd_import"
-        })
+        }
+    )
 
 @router.post("/upload-jd")
 async def upload_jd_file(

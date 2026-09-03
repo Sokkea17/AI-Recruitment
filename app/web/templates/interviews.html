@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Interview Scheduling - Recruitment Workspace{% endblock %}
+
+{% block page_greeting %}Interview Management{% endblock %}
+{% block page_subtext %}Track scheduled candidate interviews, dispatch Telegram invitations, and monitor candidate responses.{% endblock %}
+
+{% block topbar_actions %}
+<a href="/applications" class="btn btn-secondary btn-sm">
+  <span>View All Applications &rarr;</span>
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Filter Toolbar (PART 1.E & PART 2 — Section 10) -->
+<div class="section-panel" style="margin-bottom: 20px;">
+  <form method="GET" action="/interviews" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 14px;">
+    <!-- Row 1: Search, Position, Status, Type -->
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+      <!-- Search Input -->
+      <div style="flex: 2; min-width: 240px;">
+        <input type="text" name="q" value="{{ search_query or '' }}" placeholder="Search candidate name, email, phone, location, or interviewer..." class="form-control">
+      </div>
+
+      <!-- Position Filter -->
+      <div style="flex: 1.2; min-width: 180px;">
+        <select name="vacancy_id" class="form-control">
+          <option value="">All Positions</option>
+          {% for v in vacancies %}
+            <option value="{{ v.id }}" {% if current_vacancy == v.id %}selected{% endif %}>{{ v.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Status Filter -->
+      <div style="flex: 1; min-width: 170px;">
+        <select name="status" class="form-control">
+          <option value="">All Interview Statuses</option>
+          {% for st in all_statuses %}
+            <option value="{{ st }}" {% if current_status == st %}selected{% endif %}>{{ st }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Type Filter -->
+      <div style="flex: 1; min-width: 140px;">
+        <select name="interview_type" class="form-control">
+          <option value="">All Types</option>
+          <option value="In-person" {% if current_type == 'In-person' %}selected{% endif %}>In-person</option>
+          <option value="Online" {% if current_type == 'Online' %}selected{% endif %}>Online</option>
+          <option value="Phone" {% if current_type == 'Phone' %}selected{% endif %}>Phone</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Row 2: Interview Date Range -->
+    <div style="display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+        <span style="font-size: 12.5px; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          <span>Interview Date Range:</span>
+        </span>
+
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="font-size: 12px; color: var(--text-secondary); font-weight: 600;">From</label>
+          <input type="date" name="from_date" value="{{ from_date }}" class="form-control" style="width: 155px; padding: 5px 10px; font-size: 12.5px;">
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="font-size: 12px; color: var(--text-secondary); font-weight: 600;">To</label>
+          <input type="date" name="to_date" value="{{ to_date }}" class="form-control" style="width: 155px; padding: 5px 10px; font-size: 12.5px;">
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 8px;">
+        <button type="submit" class="btn btn-primary btn-sm">Apply Filter</button>
+        {% if search_query or current_status or current_vacancy or current_type or from_date or to_date %}
+          <a href="/interviews" class="btn btn-secondary btn-sm" title="Clear All Filters">Clear Filter</a>
+        {% endif %}
+      </div>
+    </div>
+  </form>
+
+  {% if date_error %}
+    <div style="background: var(--danger-bg); border-top: 1px solid var(--danger-border); color: var(--danger); padding: 10px 20px; font-size: 12.5px; font-weight: 600;">
+      ⚠️ {{ date_error }}
+    </div>
+  {% endif %}
+</div>
+
+<!-- Interviews List Table -->
+<div class="section-panel">
+  <div class="section-panel-header">
+    <div>
+      <h3 style="font-size: 14.5px; font-weight: 700; color: var(--text-primary);">All Interviews</h3>
+      <p style="font-size: 12px; color: var(--text-secondary);">Showing {{ interviews|length }} scheduled interviews</p>
+    </div>
+  </div>
+
+  {% if interviews %}
+    <div class="table-scroller">
+      <table class="saas-table">
+        <thead>
+          <tr>
+            <th>Candidate</th>
+            <th>Position</th>
+            <th>Interview Schedule</th>
+            <th>Type / Platform</th>
+            <th>Location</th>
+            <th>Interviewer</th>
+            <th>Telegram Invitation</th>
+            <th>Status</th>
+            <th style="text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for intv in interviews %}
+            <tr>
+              <td>
+                <div class="candidate-cell">
+                  <div class="candidate-avatar">{{ get_initials(intv.candidate.full_name) }}</div>
+                  <div class="candidate-meta">
+                    <span class="candidate-name">{{ intv.candidate.full_name or 'Candidate' }}</span>
+                    <span class="candidate-sub">{{ intv.candidate.phone or intv.candidate.email or '@' + (intv.candidate.telegram_username or '') }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span style="font-weight: 600; color: var(--text-primary);">{{ intv.vacancy.title if intv.vacancy else 'Position' }}</span>
+              </td>
+              <td>
+                <div style="display: flex; flex-direction: column;">
+                  <span style="font-weight: 700; color: var(--text-primary);">📅 {{ intv.interview_date }}</span>
+                  <span style="font-size: 11.5px; color: var(--text-tertiary);">{{ intv.interview_time }} (Cambodia Time)</span>
+                </div>
+              </td>
+              <td>
+                <span style="font-size: 12.5px; color: var(--text-secondary);">{{ intv.interview_type }}</span>
+                {% if intv.meeting_link %}
+                  <div style="font-size: 11px;">
+                    <a href="{{ intv.meeting_link }}" target="_blank" style="color: var(--primary); text-decoration: none;">Join Link &rarr;</a>
+                  </div>
+                {% endif %}
+              </td>
+              <td>
+                <span style="font-size: 12.5px; color: var(--text-secondary);">{{ intv.interview_location }}</span>
+              </td>
+              <td>
+                <span style="font-size: 12.5px; color: var(--text-secondary);">{{ intv.interviewer_name or 'HR Team' }}</span>
+              </td>
+              <td>
+                {% if intv.invitation_sent %}
+                  <span style="color: #34d399; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                    <span>✓ Sent</span>
+                  </span>
+                {% elif intv.invitation_error %}
+                  <span style="color: #f87171; font-size: 11.5px; font-weight: 600;">⚠️ Delivery Failed</span>
+                {% else %}
+                  <span style="color: var(--text-tertiary); font-size: 12px;">Not dispatched</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="status-pill {{ get_badge_class(intv.status) }}">{{ intv.status }}</span>
+              </td>
+              <td style="text-align: right;">
+                <a href="/applications/{{ intv.application_id }}" class="btn btn-secondary btn-sm">
+                  <span>Manage</span>
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">📅</div>
+      <h4 class="empty-title">No interviews match your selected filters</h4>
+      <p class="empty-desc">Try clearing filters or adjusting your date range.</p>
+      <div style="margin-top: 12px;">
+        <a href="/interviews" class="btn btn-secondary btn-sm">Clear Filter</a>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

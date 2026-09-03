@@ -28,7 +28,8 @@ from app.utils.formatters import (
     parse_structured_ai_summary,
     format_date_only,
     format_datetime,
-    to_cambodia_time
+    to_cambodia_time,
+    parse_date_range_to_utc
 )
 
 router = APIRouter(prefix="/applications")
@@ -51,16 +52,24 @@ async def list_applications(
     request: Request,
     status: Optional[str] = None,
     vacancy_id: Optional[int] = None,
+    department: Optional[str] = None,
     q: Optional[str] = None,
     fit: Optional[str] = None,
+    from_date: Optional[str] = None,
+    to_date: Optional[str] = None,
     current_user: User = Depends(get_current_user_required),
     session: AsyncSession = Depends(get_db)
 ):
+    from_utc, to_utc, date_error = parse_date_range_to_utc(from_date, to_date)
+
     applications = await application_service.get_applications(
         session=session,
         status=status,
         vacancy_id=vacancy_id,
-        search=q
+        department=department,
+        search=q,
+        from_date=from_utc,
+        to_date=to_utc
     )
     
     # Filter by fit tier if requested
@@ -78,6 +87,7 @@ async def list_applications(
         applications = filtered
 
     vacancies = await vacancy_service.get_all_vacancies(session)
+    departments = await vacancy_service.get_departments(session)
 
     return templates.TemplateResponse(
         request=request,
@@ -87,10 +97,15 @@ async def list_applications(
             "current_user": current_user,
             "applications": applications,
             "vacancies": vacancies,
-            "current_status": status,
+            "departments": departments,
+            "current_status": status or "",
             "current_vacancy": vacancy_id,
-            "current_fit": fit,
-            "search_query": q,
+            "current_dept": department or "",
+            "current_fit": fit or "all",
+            "search_query": q or "",
+            "from_date": from_date or "",
+            "to_date": to_date or "",
+            "date_error": date_error,
             "all_statuses": ALL_STATUSES,
             "active_nav": "applications"
         }
@@ -100,16 +115,36 @@ async def list_applications(
 async def export_applications_csv(
     status: Optional[str] = None,
     vacancy_id: Optional[int] = None,
+    department: Optional[str] = None,
     q: Optional[str] = None,
+    fit: Optional[str] = None,
+    from_date: Optional[str] = None,
+    to_date: Optional[str] = None,
     current_user: User = Depends(get_current_user_required),
     session: AsyncSession = Depends(get_db)
 ):
+    from_utc, to_utc, _ = parse_date_range_to_utc(from_date, to_date)
     applications = await application_service.get_applications(
         session=session,
         status=status,
         vacancy_id=vacancy_id,
-        search=q
+        department=department,
+        search=q,
+        from_date=from_utc,
+        to_date=to_utc
     )
+    if fit and fit != "all":
+        filtered = []
+        for a in applications:
+            f_data = calculate_preliminary_fit(a)
+            score = f_data["score"]
+            if fit == "strong" and score >= 80:
+                filtered.append(a)
+            elif fit == "moderate" and 65 <= score < 80:
+                filtered.append(a)
+            elif fit == "review" and score < 65:
+                filtered.append(a)
+        applications = filtered
 
     output = io.StringIO()
     writer = csv.writer(output)

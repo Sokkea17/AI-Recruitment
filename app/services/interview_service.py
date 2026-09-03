@@ -270,4 +270,77 @@ class InterviewService:
         await session.commit()
         return interview, None
 
+
+    @staticmethod
+    async def get_all_interviews(
+        session: AsyncSession,
+        search: Optional[str] = None,
+        vacancy_id: Optional[int] = None,
+        status: Optional[str] = None,
+        interview_type: Optional[str] = None,
+        from_date: Optional[str] = None,
+        to_date: Optional[str] = None
+    ) -> List[Interview]:
+        from app.models.candidate import Candidate
+        from app.models.vacancy import Vacancy
+        from sqlalchemy import or_
+
+        stmt = (
+            select(Interview)
+            .join(Candidate, Interview.candidate_id == Candidate.id, isouter=True)
+            .join(Vacancy, Interview.vacancy_id == Vacancy.id, isouter=True)
+            .options(
+                selectinload(Interview.application),
+                selectinload(Interview.candidate),
+                selectinload(Interview.vacancy)
+            )
+            .order_by(desc(Interview.interview_date), desc(Interview.created_at))
+        )
+
+        if status and status != "all":
+            stmt = stmt.where(Interview.status == status)
+        if interview_type and interview_type != "all":
+            stmt = stmt.where(Interview.interview_type == interview_type)
+        if vacancy_id:
+            stmt = stmt.where(Interview.vacancy_id == vacancy_id)
+        if from_date and from_date.strip():
+            stmt = stmt.where(Interview.interview_date >= from_date.strip())
+        if to_date and to_date.strip():
+            stmt = stmt.where(Interview.interview_date <= to_date.strip())
+        if search and search.strip():
+            term = f"%{search.strip()}%"
+            stmt = stmt.where(
+                or_(
+                    Candidate.full_name.ilike(term),
+                    Candidate.email.ilike(term),
+                    Candidate.phone.ilike(term),
+                    Vacancy.title.ilike(term),
+                    Interview.interview_location.ilike(term),
+                    Interview.interviewer_name.ilike(term)
+                )
+            )
+
+        res = await session.execute(stmt)
+        return list(res.scalars().all())
+
+    @staticmethod
+    async def get_upcoming_interviews(session: AsyncSession, limit: int = 5) -> List[Interview]:
+        today_cambodia = get_current_cambodia_time().date().strftime("%Y-%m-%d")
+        stmt = (
+            select(Interview)
+            .where(
+                Interview.status.in_(["Scheduled", "Confirmed", "Reschedule Requested"]),
+                Interview.interview_date >= today_cambodia
+            )
+            .options(
+                selectinload(Interview.application),
+                selectinload(Interview.candidate),
+                selectinload(Interview.vacancy)
+            )
+            .order_by(Interview.interview_date.asc(), desc(Interview.created_at))
+            .limit(limit)
+        )
+        res = await session.execute(stmt)
+        return list(res.scalars().all())
+
 interview_service = InterviewService()

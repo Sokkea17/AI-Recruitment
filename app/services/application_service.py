@@ -196,10 +196,15 @@ class ApplicationService:
         session: AsyncSession,
         status: Optional[str] = None,
         vacancy_id: Optional[int] = None,
-        search: Optional[str] = None
+        department: Optional[str] = None,
+        search: Optional[str] = None,
+        from_date: Optional[datetime] = None,
+        to_date: Optional[datetime] = None
     ) -> List[Application]:
         stmt = (
             select(Application)
+            .join(Candidate, Application.candidate_id == Candidate.id, isouter=True)
+            .join(Vacancy, Application.vacancy_id == Vacancy.id, isouter=True)
             .options(
                 selectinload(Application.candidate),
                 selectinload(Application.vacancy),
@@ -207,19 +212,28 @@ class ApplicationService:
             )
             .order_by(desc(Application.submitted_at))
         )
+
         if status and status != "all":
             stmt = stmt.where(Application.status == status)
         if vacancy_id:
             stmt = stmt.where(Application.vacancy_id == vacancy_id)
-        if search:
-            search_term = f"%{search}%"
-            stmt = stmt.join(Candidate).join(Vacancy).where(
+        if department and department != "all":
+            stmt = stmt.where(Vacancy.department == department)
+        if from_date:
+            stmt = stmt.where(Application.submitted_at >= from_date)
+        if to_date:
+            stmt = stmt.where(Application.submitted_at <= to_date)
+        if search and search.strip():
+            search_term = f"%{search.strip()}%"
+            stmt = stmt.where(
                 or_(
                     Application.application_code.ilike(search_term),
                     Candidate.full_name.ilike(search_term),
                     Candidate.email.ilike(search_term),
                     Candidate.phone.ilike(search_term),
-                    Vacancy.title.ilike(search_term)
+                    Candidate.telegram_username.ilike(search_term),
+                    Vacancy.title.ilike(search_term),
+                    Vacancy.department.ilike(search_term)
                 )
             )
 
