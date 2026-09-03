@@ -1,149 +1,205 @@
 {% extends "base.html" %}
 
-{% block title %}Import Job Description{% endblock %}
-{% block page_title %}Import JD Document{% endblock %}
+{% block title %}Import JD Document - Recruitment Workspace{% endblock %}
+
+{% block page_greeting %}Import Job Description{% endblock %}
+{% block page_subtext %}Upload a JD file (PDF, DOCX, DOC, TXT) to automatically extract requirements and create a vacancy.{% endblock %}
 
 {% block topbar_actions %}
-<a href="/vacancies/template/download" class="btn btn-secondary">
-  <span>📥 Download Blank JD Template (.docx)</span>
+<a href="/vacancies/template/download" class="btn btn-secondary btn-sm" title="Download formatted Word template">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+    <polyline points="7 10 12 15 17 10"></polyline>
+    <line x1="12" y1="15" x2="12" y2="3"></line>
+  </svg>
+  <span>Download Blank JD Template (.docx)</span>
 </a>
 {% endblock %}
 
 {% block content %}
-<div style="max-width: 900px; margin: 0 auto;">
-  <!-- Upload Box -->
-  <div class="panel">
-    <div class="panel-header">
+<div style="max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
+
+  <!-- Clean Drag & Drop Upload Zone -->
+  <div class="section-panel" style="margin-bottom: 0;">
+    <div style="padding: 36px 24px; text-align: center; border: 2px dashed var(--border-subtle); border-radius: var(--radius-md); background: var(--bg-surface-subtle); cursor: pointer; transition: all 0.2s ease;" id="dropZone">
+      <div style="width: 48px; height: 48px; border-radius: var(--radius-full); background: rgba(99, 102, 241, 0.12); color: #818cf8; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px auto;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+      </div>
+
+      <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Upload your Job Description file</h3>
+      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 14px;">Drag and drop your document here, or click to browse files from your computer</p>
+      
+      <div style="display: inline-flex; gap: 8px; margin-bottom: 16px;">
+        <span class="fit-badge fit-neutral" style="font-size: 11px;">PDF</span>
+        <span class="fit-badge fit-neutral" style="font-size: 11px;">DOCX</span>
+        <span class="fit-badge fit-neutral" style="font-size: 11px;">DOC</span>
+        <span class="fit-badge fit-neutral" style="font-size: 11px;">TXT</span>
+      </div>
+
       <div>
-        <div class="panel-title">Upload Job Description File</div>
-        <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
-          Supported formats: PDF, DOCX, DOC, TXT (Max 15MB). The system automatically extracts key vacancy sections.
-        </div>
+        <input type="file" id="jdFileInput" accept=".pdf,.docx,.doc,.txt" style="display: none;">
+        <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('jdFileInput').click();">
+          <span>Browse Files</span>
+        </button>
       </div>
     </div>
 
-    <div id="jd-dropzone" class="upload-dropzone">
-      <div class="dropzone-icon">📄</div>
-      <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 6px;">Drag and drop your JD file here</h3>
-      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">or click to browse from your computer</p>
-      <input type="file" id="jd-file-input" accept=".pdf,.docx,.doc,.txt" style="display: none;">
-      <button type="button" class="btn btn-secondary" onclick="document.getElementById('jd-file-input').click()">
-        Select JD Document
-      </button>
-    </div>
-
-    <div id="upload-loading" style="display: none; text-align: center; padding: 24px;">
-      <div style="font-size: 24px; animation: spin 1s infinite linear;">⚙️</div>
-      <div style="margin-top: 8px; font-size: 14px; color: #818cf8; font-weight: 500;">Extracting sections from document...</div>
-    </div>
-  </div>
-
-  <!-- Multi-position alert -->
-  <div id="multi-position-alert" style="display: none; background: var(--warning-bg); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; padding: 14px; border-radius: 8px; font-size: 13.5px; margin-bottom: 24px;">
-  </div>
-
-  <!-- Review & Edit Extracted Fields -->
-  <div id="extraction-preview" class="panel">
-    <div class="panel-header">
-      <div>
-        <div class="panel-title">Review & Edit Vacancy Details</div>
-        <div style="font-size: 12.5px; color: var(--text-muted);">
-          Review the extracted information below. Missing items were not invented. You may complete or edit any field before publishing.
-        </div>
+    <!-- Extraction Loading State -->
+    <div id="uploadProgress" style="display: none; padding: 20px; text-align: center;">
+      <div style="display: inline-flex; align-items: center; gap: 10px; color: #818cf8; font-size: 13.5px; font-weight: 600;">
+        <span>⏳ Analyzing document and extracting structured sections...</span>
       </div>
     </div>
+  </div>
 
-    <form action="/vacancies/new" method="POST">
+  <!-- Extracted Information Review & Edit Form (Initially Hidden) -->
+  <div class="section-panel" id="reviewFormPanel" style="display: none; margin-bottom: 0;">
+    <div class="section-panel-header">
+      <div>
+        <h3 style="font-size: 15px; font-weight: 700; color: var(--text-primary);">Review & Confirm Extracted Vacancy</h3>
+        <p style="font-size: 12px; color: var(--text-secondary);">Verify the extracted fields before publishing to Telegram</p>
+      </div>
+      <span class="status-pill badge-info" id="fileExtractedBadge">Parsed</span>
+    </div>
+
+    <form method="POST" action="/vacancies/confirm-import" style="padding: 24px; display: flex; flex-direction: column; gap: 18px;">
+      <input type="hidden" name="stored_jd_path" id="fieldStoredPath">
+
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-        <div class="form-group">
-          <label class="form-label" for="title">Position Title *</label>
-          <input type="text" id="title" name="title" class="form-control" required placeholder="e.g. Senior Legal Executive">
+        <div>
+          <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Position Title *</label>
+          <input type="text" name="title" id="fieldTitle" class="form-control" required>
         </div>
-
-        <div class="form-group">
-          <label class="form-label" for="department">Department</label>
-          <input type="text" id="department" name="department" class="form-control" placeholder="e.g. Legal & Compliance">
+        <div>
+          <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Department</label>
+          <input type="text" name="department" id="fieldDepartment" class="form-control">
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
-        <div class="form-group">
-          <label class="form-label" for="location">Location</label>
-          <input type="text" id="location" name="location" class="form-control" placeholder="e.g. Phnom Penh">
+        <div>
+          <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Location</label>
+          <input type="text" name="location" id="fieldLocation" class="form-control">
         </div>
-
-        <div class="form-group">
-          <label class="form-label" for="employment_type">Employment Type</label>
-          <select id="employment_type" name="employment_type" class="form-control">
-            <option value="Full-time">Full-time</option>
-            <option value="Part-time">Part-time</option>
-            <option value="Contract">Contract</option>
-            <option value="Internship">Internship</option>
-            <option value="Remote">Remote</option>
-            <option value="Hybrid">Hybrid</option>
-          </select>
+        <div>
+          <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Employment Type</label>
+          <input type="text" name="employment_type" id="fieldEmploymentType" class="form-control" placeholder="Full-time">
         </div>
-
-        <div class="form-group">
-          <label class="form-label" for="salary_range">Salary Range</label>
-          <input type="text" id="salary_range" name="salary_range" class="form-control" placeholder="e.g. $1,200 - $1,800">
+        <div>
+          <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Salary Range</label>
+          <input type="text" name="salary_range" id="fieldSalaryRange" class="form-control" placeholder="e.g. $800 - $1,200">
         </div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label" for="short_description">Short Job Summary (Appears in Bot)</label>
-        <textarea id="short_description" name="short_description" class="form-control" rows="3" placeholder="Brief summary of the role shown to candidates in Telegram"></textarea>
+      <div>
+        <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Job Summary (Candidate Telegram View)</label>
+        <textarea name="short_description" id="fieldSummary" rows="3" class="form-control"></textarea>
       </div>
 
-      <div class="form-group">
-        <label class="form-label" for="requirements">Key Requirements *</label>
-        <textarea id="requirements" name="requirements" class="form-control" rows="4" placeholder="Qualifications, education, and required experience"></textarea>
+      <div>
+        <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Key Responsibilities</label>
+        <textarea name="responsibilities" id="fieldResponsibilities" rows="4" class="form-control"></textarea>
       </div>
 
-      <div class="form-group">
-        <label class="form-label" for="responsibilities">Responsibilities</label>
-        <textarea id="responsibilities" name="responsibilities" class="form-control" rows="4" placeholder="Main duties and accountabilities"></textarea>
+      <div>
+        <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Requirements & Qualifications</label>
+        <textarea name="requirements" id="fieldRequirements" rows="4" class="form-control"></textarea>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-        <div class="form-group">
-          <label class="form-label" for="education">Education</label>
-          <input type="text" id="education" name="education" class="form-control" placeholder="e.g. Bachelor's Degree">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="skills">Skills</label>
-          <input type="text" id="skills" name="skills" class="form-control" placeholder="e.g. Contract negotiation, Legal drafting">
-        </div>
+      <div>
+        <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Skills & Competencies</label>
+        <input type="text" name="skills" id="fieldSkills" class="form-control" placeholder="Comma-separated skills">
       </div>
 
-      <div class="form-group">
-        <label class="form-label" for="instructions">Application Instructions</label>
-        <input type="text" id="instructions" name="instructions" class="form-control" placeholder="e.g. Submit CV in English">
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" for="full_description">Full Extracted Text</label>
-        <textarea id="full_description" name="full_description" class="form-control" rows="4"></textarea>
-      </div>
-
-      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
-        <button type="submit" name="status" value="Draft" class="btn btn-secondary">
-          Save as Draft
-        </button>
-        <button type="submit" name="status" value="Published" class="btn btn-success">
-          Publish to Telegram Bot Immediately
-        </button>
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; padding-top: 14px; border-top: 1px solid var(--border-subtle);">
+        <button type="submit" name="action" value="draft" class="btn btn-secondary">Save as Draft</button>
+        <button type="submit" name="action" value="publish" class="btn btn-primary">Publish to Telegram &rarr;</button>
       </div>
     </form>
   </div>
+
 </div>
 {% endblock %}
 
-{% block scripts %}
+{% block extra_scripts %}
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    initJDUpload('jd-dropzone', 'jd-file-input', 'jd-form');
+  const dropZone = document.getElementById("dropZone");
+  const fileInput = document.getElementById("jdFileInput");
+  const progress = document.getElementById("uploadProgress");
+  const reviewPanel = document.getElementById("reviewFormPanel");
+
+  ["dragenter", "dragover"].forEach(event => {
+    dropZone.addEventListener(event, (e) => {
+      e.preventDefault();
+      dropZone.style.borderColor = "var(--border-focus)";
+      dropZone.style.background = "rgba(99, 102, 241, 0.05)";
+    });
   });
+
+  ["dragleave", "drop"].forEach(event => {
+    dropZone.addEventListener(event, (e) => {
+      e.preventDefault();
+      dropZone.style.borderColor = "var(--border-subtle)";
+      dropZone.style.background = "var(--bg-surface-subtle)";
+    });
+  });
+
+  dropZone.addEventListener("drop", (e) => {
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileUpload(e.dataTransfer.files[0]);
+    }
+  });
+
+  fileInput.addEventListener("change", (e) => {
+    if (fileInput.files && fileInput.files.length > 0) {
+      handleFileUpload(fileInput.files[0]);
+    }
+  });
+
+  async function handleFileUpload(file) {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    progress.style.display = "block";
+    reviewPanel.style.display = "none";
+
+    try {
+      const res = await fetch("/vacancies/import-jd/upload", {
+        method: "POST",
+        body: formData
+      });
+
+      progress.style.display = "none";
+
+      if (res.ok) {
+        const data = await res.json();
+        document.getElementById("fieldStoredPath").value = data.stored_path || "";
+        document.getElementById("fieldTitle").value = data.title || "";
+        document.getElementById("fieldDepartment").value = data.department || "";
+        document.getElementById("fieldLocation").value = data.location || "";
+        document.getElementById("fieldEmploymentType").value = data.employment_type || "Full-time";
+        document.getElementById("fieldSalaryRange").value = data.salary_range || "";
+        document.getElementById("fieldSummary").value = data.short_description || "";
+        document.getElementById("fieldResponsibilities").value = data.responsibilities || "";
+        document.getElementById("fieldRequirements").value = data.requirements || "";
+        document.getElementById("fieldSkills").value = data.skills || "";
+        
+        document.getElementById("fileExtractedBadge").innerText = file.name;
+        reviewPanel.style.display = "block";
+        reviewPanel.scrollIntoView({ behavior: "smooth" });
+        showToast("Document parsed successfully!", "success");
+      } else {
+        const err = await res.json();
+        showToast(err.detail || "Error extracting JD", "error");
+      }
+    } catch (e) {
+      progress.style.display = "none";
+      showToast("Network failure uploading file", "error");
+    }
+  }
 </script>
 {% endblock %}

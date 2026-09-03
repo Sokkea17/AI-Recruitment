@@ -1,92 +1,115 @@
 {% extends "base.html" %}
 
-{% block title %}Vacancies{% endblock %}
-{% block page_title %}Job Vacancies{% endblock %}
+{% block title %}Vacancies - Recruitment Workspace{% endblock %}
+
+{% block page_greeting %}Job Vacancies{% endblock %}
+{% block page_subtext %}Manage your open positions, job descriptions, and publication status.{% endblock %}
 
 {% block topbar_actions %}
-<a href="/vacancies/import-jd" class="btn btn-primary">
-  <span>📥 Import JD</span>
+<a href="/vacancies/import-jd" class="btn btn-secondary btn-sm">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+    <polyline points="17 8 12 3 7 8"></polyline>
+    <line x1="12" y1="3" x2="12" y2="15"></line>
+  </svg>
+  <span>Import JD</span>
 </a>
-<a href="/vacancies/new" class="btn btn-secondary">
-  <span>+ Create Manually</span>
+<a href="/vacancies/new" class="btn btn-primary btn-sm">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19"></line>
+    <line x1="5" y1="12" x2="19" y2="12"></line>
+  </svg>
+  <span>+ Create Vacancy</span>
 </a>
 {% endblock %}
 
 {% block content %}
-<div class="panel">
-  <div class="panel-header">
-    <div class="panel-title">All Positions ({{ vacancies|length }})</div>
-    <div style="display: flex; gap: 8px;">
-      <a href="/vacancies" class="btn btn-secondary btn-sm {% if not current_status %}btn-primary{% endif %}">All</a>
-      <a href="/vacancies?status=Published" class="btn btn-secondary btn-sm {% if current_status == 'Published' %}btn-primary{% endif %}">Published</a>
-      <a href="/vacancies?status=Draft" class="btn btn-secondary btn-sm {% if current_status == 'Draft' %}btn-primary{% endif %}">Draft</a>
-      <a href="/vacancies?status=Closed" class="btn btn-secondary btn-sm {% if current_status == 'Closed' %}btn-primary{% endif %}">Closed</a>
+<!-- Vacancies Data Section -->
+<div class="section-panel">
+  <div class="section-panel-header">
+    <div>
+      <h3 style="font-size: 14.5px; font-weight: 700; color: var(--text-primary);">Active & Archived Positions</h3>
+      <p style="font-size: 12px; color: var(--text-secondary);">Showing {{ vacancies|length }} total vacancies</p>
     </div>
   </div>
 
-  <div class="table-responsive">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Vacancy Code</th>
-          <th>Position Title</th>
-          <th>Department</th>
-          <th>Type</th>
-          <th>Status</th>
-          <th>Applications</th>
-          <th>Created</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% if vacancies %}
-          {% for vac in vacancies %}
+  {% if vacancies %}
+    <div class="table-scroller">
+      <table class="saas-table">
+        <thead>
           <tr>
-            <td><code>{{ vac.vacancy_code }}</code></td>
-            <td>
-              <div style="font-weight: 600;">{{ vac.title }}</div>
-              <div style="font-size: 12px; color: var(--text-muted);">{{ vac.location or 'Unspecified Location' }}</div>
-            </td>
-            <td>{{ vac.department or 'General' }}</td>
-            <td>{{ vac.employment_type or 'Full-time' }}</td>
-            <td>
-              <span class="badge {{ get_badge_class(vac.status) }}">{{ vac.status }}</span>
-            </td>
-            <td>
-              <a href="/applications?vacancy_id={{ vac.id }}" style="color: #818cf8; text-decoration: none; font-weight: 600;">
-                {{ vac.applications|length }} application(s)
-              </a>
-            </td>
-            <td style="font-size: 12.5px; color: var(--text-muted);">{{ vac.created_at.strftime('%d %b %Y') }}</td>
-            <td>
-              <div style="display: flex; gap: 6px;">
-                <a href="/vacancies/{{ vac.id }}/edit" class="btn btn-secondary btn-sm">Edit</a>
-                {% if vac.status == 'Draft' %}
-                <form action="/vacancies/{{ vac.id }}/publish" method="POST" style="display: inline;">
-                  <button type="submit" class="btn btn-success btn-sm">Publish</button>
-                </form>
-                {% elif vac.status == 'Published' %}
-                <form action="/vacancies/{{ vac.id }}/close" method="POST" style="display: inline;">
-                  <button type="submit" class="btn btn-danger btn-sm">Close</button>
-                </form>
-                {% elif vac.status == 'Closed' %}
-                <form action="/vacancies/{{ vac.id }}/publish" method="POST" style="display: inline;">
-                  <button type="submit" class="btn btn-secondary btn-sm">Reopen</button>
-                </form>
-                {% endif %}
-              </div>
-            </td>
+            <th>Position Title</th>
+            <th>Department</th>
+            <th>Location / Type</th>
+            <th>Applications</th>
+            <th>Status</th>
+            <th>Created Date</th>
+            <th style="text-align: right;">Actions</th>
           </tr>
+        </thead>
+        <tbody>
+          {% for v in vacancies %}
+            <tr>
+              <td>
+                <div style="display: flex; flex-direction: column;">
+                  <span style="font-weight: 700; color: var(--text-primary); font-size: 13.5px;">{{ v.title }}</span>
+                  <span style="font-size: 11.5px; color: var(--text-tertiary);">{{ v.vacancy_code }}</span>
+                </div>
+              </td>
+              <td>
+                <span style="font-weight: 500; color: var(--text-secondary);">{{ v.department or 'General' }}</span>
+              </td>
+              <td>
+                <span style="color: var(--text-secondary); font-size: 12.5px;">{{ v.location or 'Phnom Penh' }} &bull; {{ v.employment_type or 'Full-time' }}</span>
+              </td>
+              <td>
+                <a href="/applications?vacancy_id={{ v.id }}" style="text-decoration: none;">
+                  <span class="kpi-pill kpi-pill-blue" style="font-size: 12px; padding: 3px 8px;">
+                    {{ v.applications|length }} applications
+                  </span>
+                </a>
+              </td>
+              <td>
+                <span class="status-pill {{ get_badge_class(v.status) }}">{{ v.status }}</span>
+              </td>
+              <td>
+                <span style="color: var(--text-secondary); font-size: 12px;">{{ format_date(v.created_at) }}</span>
+              </td>
+              <td style="text-align: right;">
+                <div style="display: inline-flex; gap: 6px; align-items: center;">
+                  <a href="/applications?vacancy_id={{ v.id }}" class="btn btn-secondary btn-sm" title="View applications for this position">
+                    <span>Applications</span>
+                  </a>
+                  <a href="/vacancies/{{ v.id }}/edit" class="btn btn-secondary btn-sm" title="Edit vacancy">
+                    <span>Edit</span>
+                  </a>
+
+                  {% if v.status == 'Published' %}
+                    <button type="button" class="btn btn-secondary btn-sm" style="color: #f87171;" onclick="openConfirmModal('Close Vacancy', 'Are you sure you want to close this position? Candidates will no longer be able to apply on Telegram.', 'Close Position', () => { document.getElementById('formClose_{{ v.id }}').submit(); });">
+                      <span>Close</span>
+                    </button>
+                    <form id="formClose_{{ v.id }}" method="POST" action="/vacancies/{{ v.id }}/close" style="display: none;"></form>
+                  {% elif v.status == 'Draft' %}
+                    <form method="POST" action="/vacancies/{{ v.id }}/publish" style="display: inline;">
+                      <button type="submit" class="btn btn-primary btn-sm">Publish</button>
+                    </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
           {% endfor %}
-        {% else %}
-          <tr>
-            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 36px;">
-              No vacancies found. Click <b>Import JD</b> to upload job description documents.
-            </td>
-          </tr>
-        {% endif %}
-      </tbody>
-    </table>
-  </div>
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">📁</div>
+      <h4 class="empty-title">No vacancies created yet</h4>
+      <p class="empty-desc">Create your first vacancy or import a job description document to begin receiving candidates.</p>
+      <div style="margin-top: 16px;">
+        <a href="/vacancies/import-jd" class="btn btn-primary">Import JD Document</a>
+      </div>
+    </div>
+  {% endif %}
 </div>
 {% endblock %}

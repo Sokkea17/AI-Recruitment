@@ -1,72 +1,89 @@
 {% extends "base.html" %}
 
-{% block title %}Candidates{% endblock %}
-{% block page_title %}Candidate Directory{% endblock %}
+{% block title %}Candidate Directory - Recruitment Workspace{% endblock %}
+
+{% block page_greeting %}Candidate Directory{% endblock %}
+{% block page_subtext %}Master directory of all registered candidate profiles and submission histories.{% endblock %}
+
+{% block topbar_actions %}
+<a href="/applications" class="btn btn-secondary btn-sm">
+  <span>View All Applications &rarr;</span>
+</a>
+{% endblock %}
 
 {% block content %}
-<div class="panel">
-  <div class="panel-header">
-    <div class="panel-title">Registered Candidates ({{ candidates|length }})</div>
+<div class="section-panel">
+  <div class="section-panel-header">
+    <div>
+      <h3 style="font-size: 14.5px; font-weight: 700; color: var(--text-primary);">Registered Candidates</h3>
+      <p style="font-size: 12px; color: var(--text-secondary);">Showing {{ candidates|length }} candidate profiles</p>
+    </div>
   </div>
 
-  <div class="table-responsive">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Candidate Name</th>
-          <th>Contact Info</th>
-          <th>Telegram Account</th>
-          <th>Total Applications</th>
-          <th>Applied Positions</th>
-          <th>First Registered</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% if candidates %}
-          {% for cand in candidates %}
+  {% if candidates %}
+    <div class="table-scroller">
+      <table class="saas-table">
+        <thead>
           <tr>
-            <td>
-              <div style="font-weight: 600; font-size: 14px;">{{ cand.full_name }}</div>
-            </td>
-            <td>
-              <div>{{ cand.phone or 'No phone' }}</div>
-              <div style="font-size: 12px; color: var(--text-muted);">{{ cand.email or 'No email' }}</div>
-            </td>
-            <td>
-              {% if cand.telegram_username %}
-              <a href="https://t.me/{{ cand.telegram_username }}" target="_blank" style="color: #818cf8; text-decoration: none;">
-                @{{ cand.telegram_username }}
-              </a>
-              {% else %}
-              <span style="color: var(--text-dim);">ID: {{ cand.telegram_user_id }}</span>
-              {% endif %}
-            </td>
-            <td style="font-weight: 700; color: #818cf8;">
-              {{ cand.applications|length }}
-            </td>
-            <td>
-              <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-                {% for app in cand.applications %}
-                <a href="/applications/{{ app.id }}" class="badge badge-secondary" style="text-decoration: none;">
-                  {{ app.vacancy.title if app.vacancy else 'Vacancy' }}
+            <th>Candidate</th>
+            <th>Contact Details</th>
+            <th>Telegram Account</th>
+            <th>Applications</th>
+            <th>First Registered</th>
+            <th style="text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in candidates %}
+            <tr>
+              <td>
+                <div class="candidate-cell">
+                  <div class="candidate-avatar">{{ get_initials(c.full_name) }}</div>
+                  <div class="candidate-meta">
+                    <span class="candidate-name">{{ c.full_name or 'Candidate' }}</span>
+                    <span class="candidate-sub">ID: {{ c.id }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div style="display: flex; flex-direction: column; font-size: 12.5px;">
+                  <span style="color: var(--text-primary);">{{ c.phone or 'No phone' }}</span>
+                  <span style="color: var(--text-tertiary);">{{ c.email or 'No email' }}</span>
+                </div>
+              </td>
+              <td>
+                <span style="color: #818cf8; font-size: 12.5px;">
+                  {% if c.telegram_username %}
+                    <a href="https://t.me/{{ c.telegram_username }}" target="_blank" style="color: #818cf8; text-decoration: none;">@{{ c.telegram_username }}</a>
+                  {% else %}
+                    {{ c.telegram_user_id }}
+                  {% endif %}
+                </span>
+              </td>
+              <td>
+                <span class="kpi-pill kpi-pill-blue" style="font-size: 11.5px; padding: 3px 8px;">
+                  {{ c.applications|length }} submission{% if c.applications|length != 1 %}s{% endif %}
+                </span>
+              </td>
+              <td>
+                <span style="color: var(--text-secondary); font-size: 12px;">{{ format_date(c.created_at) }}</span>
+              </td>
+              <td style="text-align: right;">
+                <a href="/applications?q={{ c.full_name }}" class="btn btn-secondary btn-sm">
+                  <span>View History</span>
                 </a>
-                {% endfor %}
-              </div>
-            </td>
-            <td style="font-size: 12.5px; color: var(--text-muted);">
-              {{ cand.created_at.strftime('%d %b %Y') }}
-            </td>
-          </tr>
+              </td>
+            </tr>
           {% endfor %}
-        {% else %}
-          <tr>
-            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 36px;">
-              No candidates registered yet.
-            </td>
-          </tr>
-        {% endif %}
-      </tbody>
-    </table>
-  </div>
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">👥</div>
+      <h4 class="empty-title">No candidates found</h4>
+      <p class="empty-desc">Candidates will be automatically indexed here when they submit applications via Telegram.</p>
+    </div>
+  {% endif %}
 </div>
 {% endblock %}

@@ -1,110 +1,144 @@
 {% extends "base.html" %}
 
-{% block title %}Applications{% endblock %}
-{% block page_title %}Candidate Applications{% endblock %}
+{% block title %}Applications Pipeline - Recruitment Workspace{% endblock %}
+
+{% block page_greeting %}Candidate Applications{% endblock %}
+{% block page_subtext %}Review, filter, and manage candidate recruitment records.{% endblock %}
 
 {% block topbar_actions %}
-<a href="/applications/export/csv{% if current_status or current_vacancy or search_query %}?status={{ current_status or '' }}&vacancy_id={{ current_vacancy or '' }}&q={{ search_query or '' }}{% endif %}" class="btn btn-secondary">
-  <span>📥 Export CSV</span>
+<a href="/applications/export/csv{% if current_status %}?status={{ current_status }}{% endif %}" class="btn btn-secondary btn-sm" title="Export as CSV">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+    <polyline points="7 10 12 15 17 10"></polyline>
+    <line x1="12" y1="15" x2="12" y2="3"></line>
+  </svg>
+  <span>Export CSV</span>
 </a>
 {% endblock %}
 
 {% block content %}
-<div class="panel">
-  <!-- Filters Bar -->
-  <form method="GET" action="/applications" class="filters-bar">
-    <div class="search-box">
-      <input type="text" name="q" value="{{ search_query or '' }}" class="form-control" placeholder="Search candidate, email, phone, position...">
+<!-- Filter Toolbar -->
+<div class="section-panel" style="margin-bottom: 20px;">
+  <form method="GET" action="/applications" style="padding: 16px 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+    <!-- Search Input -->
+    <div style="flex: 1; min-width: 220px;">
+      <input type="text" name="q" value="{{ search_query or '' }}" placeholder="Search by candidate name, email, or phone..." class="form-control">
     </div>
 
-    <div style="min-width: 180px;">
-      <select name="vacancy_id" class="form-control" onchange="this.form.submit()">
+    <!-- Position Filter -->
+    <div style="width: 200px;">
+      <select name="vacancy_id" class="form-control">
         <option value="">All Positions</option>
-        {% for vac in vacancies %}
-        <option value="{{ vac.id }}" {% if current_vacancy == vac.id %}selected{% endif %}>{{ vac.title }}</option>
+        {% for v in vacancies %}
+          <option value="{{ v.id }}" {% if current_vacancy == v.id %}selected{% endif %}>{{ v.title }}</option>
         {% endfor %}
       </select>
     </div>
 
-    <div style="min-width: 160px;">
-      <select name="status" class="form-control" onchange="this.form.submit()">
-        <option value="all">All Statuses</option>
-        {% for st in ['New', 'Under Review', 'Shortlisted', 'Interview', 'Selected', 'Rejected', 'Withdrawn'] %}
-        <option value="{{ st }}" {% if current_status == st %}selected{% endif %}>{{ st }}</option>
+    <!-- Status Filter -->
+    <div style="width: 170px;">
+      <select name="status" class="form-control">
+        <option value="">All Statuses</option>
+        {% for st in ["New", "Under Review", "Shortlisted", "Interview", "Selected", "Rejected", "Withdrawn"] %}
+          <option value="{{ st }}" {% if current_status == st %}selected{% endif %}>{{ st }}</option>
         {% endfor %}
       </select>
     </div>
 
-    <button type="submit" class="btn btn-secondary">Filter</button>
-    {% if current_status or current_vacancy or search_query %}
-    <a href="/applications" class="btn btn-secondary btn-sm" title="Clear Filters">Reset</a>
-    {% endif %}
+    <!-- AI Fit Filter -->
+    <div style="width: 180px;">
+      <select name="fit" class="form-control">
+        <option value="all">All AI Fit Tiers</option>
+        <option value="strong" {% if current_fit == 'strong' %}selected{% endif %}>Strong Fit (&ge; 80%)</option>
+        <option value="moderate" {% if current_fit == 'moderate' %}selected{% endif %}>Moderate Fit (65-79%)</option>
+        <option value="review" {% if current_fit == 'review' %}selected{% endif %}>Review Required (&lt; 65%)</option>
+      </select>
+    </div>
+
+    <!-- Submit & Clear -->
+    <div style="display: flex; gap: 8px;">
+      <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+      {% if search_query or current_status or current_vacancy or current_fit %}
+        <a href="/applications" class="btn btn-secondary btn-sm" title="Clear Filters">Clear</a>
+      {% endif %}
+    </div>
   </form>
+</div>
 
-  <!-- Applications Table -->
-  <div class="table-responsive">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Application ID</th>
-          <th>Candidate</th>
-          <th>Position</th>
-          <th>Department</th>
-          <th>Date</th>
-          <th>Status</th>
-          <th>CV</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% if applications %}
-          {% for app in applications %}
-          <tr>
-            <td><code>{{ app.application_code }}</code></td>
-            <td>
-              <div style="font-weight: 600;">{{ app.candidate.full_name }}</div>
-              <div style="font-size: 12px; color: var(--text-muted);">
-                {{ app.candidate.phone or app.candidate.email or ('@' + app.candidate.telegram_username if app.candidate.telegram_username else 'Telegram') }}
-              </div>
-            </td>
-            <td>
-              <div style="font-weight: 500;">{{ app.vacancy.title }}</div>
-            </td>
-            <td>{{ app.vacancy.department or 'General' }}</td>
-            <td style="font-size: 12.5px; color: var(--text-muted);">
-              {{ app.submitted_at.strftime('%d %b %Y, %H:%M') }}
-              {% if app.duplicate_submission_count > 0 %}
-              <div style="font-size: 11px; color: #818cf8;">(Updated x{{ app.duplicate_submission_count }})</div>
-              {% endif %}
-            </td>
-            <td>
-              <select onchange="updateApplicationStatus({{ app.id }}, this.value)" class="form-control" style="padding: 4px 8px; font-size: 12px; min-width: 130px; height: 32px;">
-                {% for st in ['New', 'Under Review', 'Shortlisted', 'Interview', 'Selected', 'Rejected', 'Withdrawn'] %}
-                <option value="{{ st }}" {% if app.status == st %}selected{% endif %}>{{ st }}</option>
-                {% endfor %}
-              </select>
-            </td>
-            <td>
-              <a href="/applications/{{ app.id }}/cv" class="btn btn-secondary btn-sm" target="_blank" title="Download CV">
-                📄 CV
-              </a>
-            </td>
-            <td>
-              <a href="/applications/{{ app.id }}" class="btn btn-primary btn-sm">
-                View Details
-              </a>
-            </td>
-          </tr>
-          {% endfor %}
-        {% else %}
-          <tr>
-            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 36px;">
-              No applications match your search or filter criteria.
-            </td>
-          </tr>
-        {% endif %}
-      </tbody>
-    </table>
+<!-- Candidate Applications Table -->
+<div class="section-panel">
+  <div class="section-panel-header">
+    <div>
+      <h3 style="font-size: 14.5px; font-weight: 700; color: var(--text-primary);">Candidate Pipeline</h3>
+      <p style="font-size: 12px; color: var(--text-secondary);">Showing {{ applications|length }} total applications</p>
+    </div>
   </div>
+
+  {% if applications %}
+    <div class="table-scroller">
+      <table class="saas-table">
+        <thead>
+          <tr>
+            <th>Candidate</th>
+            <th>Position Applied</th>
+            <th>AI Preliminary Fit</th>
+            <th>Status</th>
+            <th>Applied Date</th>
+            <th style="text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for app in applications %}
+            {% set fit = get_fit(app) %}
+            <tr>
+              <td>
+                <div class="candidate-cell">
+                  <div class="candidate-avatar">{{ get_initials(app.candidate.full_name) }}</div>
+                  <div class="candidate-meta">
+                    <span class="candidate-name">{{ app.candidate.full_name or 'Candidate' }}</span>
+                    <span class="candidate-sub">{{ app.candidate.phone or app.candidate.email or '@' + (app.candidate.telegram_username or '') }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div style="display: flex; flex-direction: column;">
+                  <span style="font-weight: 600; color: var(--text-primary);">{{ app.vacancy.title if app.vacancy else 'Position' }}</span>
+                  <span style="font-size: 11.5px; color: var(--text-tertiary);">{{ app.vacancy.department if app.vacancy else 'General' }}</span>
+                </div>
+              </td>
+              <td>
+                <span class="fit-badge {{ fit.badge_class }}" title="AI Preliminary Fit: {{ fit.label }}">
+                  <span>{{ fit.score }}%</span>
+                  <span style="font-size: 10px; opacity: 0.85;">{{ fit.label }}</span>
+                </span>
+              </td>
+              <td>
+                <!-- Quick Status Dropdown -->
+                <select class="form-control quick-status-select" data-app-id="{{ app.id }}" data-current="{{ app.status }}" style="padding: 4px 24px 4px 8px; font-size: 12px; width: 130px; height: 28px;">
+                  {% for st in ["New", "Under Review", "Shortlisted", "Interview", "Selected", "Rejected", "Withdrawn"] %}
+                    <option value="{{ st }}" {% if app.status == st %}selected{% endif %}>{{ st }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td>
+                <span style="color: var(--text-secondary); font-size: 12.5px;">{{ format_date(app.submitted_at) }}</span>
+              </td>
+              <td style="text-align: right;">
+                <a href="/applications/{{ app.id }}" class="btn btn-secondary btn-sm">
+                  <span>Review &rarr;</span>
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">🔍</div>
+      <h4 class="empty-title">No applications match your filter</h4>
+      <p class="empty-desc">Try clearing the search filters or check back later when new candidates apply.</p>
+    </div>
+  {% endif %}
 </div>
 {% endblock %}

@@ -3,94 +3,176 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}HR Dashboard{% endblock %} - Recruitment Assistant</title>
+  <title>{% block title %}Recruitment Workspace{% endblock %}</title>
   <link rel="stylesheet" href="/static/css/styles.css">
+  {% block extra_head %}{% endblock %}
 </head>
 <body>
-  <div class="app-container">
-    <!-- Sidebar -->
+  <div class="app-shell">
+    <!-- Collapsible Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-header">
-        <div class="brand-icon">🤖</div>
-        <div>
-          <div class="brand-title">Recruitment Bot</div>
-          <div class="brand-subtitle">HR Automation</div>
+        <div class="sidebar-brand-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
+        <div class="sidebar-brand-text">
+          <span class="workspace-name">Recruitment</span>
+          <span class="workspace-tag">Workspace SaaS</span>
         </div>
       </div>
 
-      <ul class="nav-list">
+      <!-- Navigation Menu -->
+      <ul class="nav-menu">
         <li>
-          <a href="/" class="nav-link {% if active_nav == 'dashboard' %}active{% endif %}">
-            <span class="nav-icon">📊</span>
-            <span>Dashboard</span>
+          <a href="/" class="nav-item-link {% if active_nav == 'dashboard' %}active{% endif %}">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+            </span>
+            <span class="nav-label">Dashboard</span>
           </a>
         </li>
         <li>
-          <a href="/vacancies" class="nav-link {% if active_nav == 'vacancies' %}active{% endif %}">
-            <span class="nav-icon">💼</span>
-            <span>Vacancies</span>
+          <a href="/vacancies" class="nav-item-link {% if active_nav == 'vacancies' %}active{% endif %}">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+              </svg>
+            </span>
+            <span class="nav-label">Vacancies</span>
           </a>
         </li>
         <li>
-          <a href="/vacancies/import-jd" class="nav-link {% if active_nav == 'jd_import' %}active{% endif %}">
-            <span class="nav-icon">📥</span>
-            <span>JD Import</span>
+          <a href="/applications" class="nav-item-link {% if active_nav == 'applications' %}active{% endif %}">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+            </span>
+            <span class="nav-label">Applications</span>
           </a>
         </li>
         <li>
-          <a href="/applications" class="nav-link {% if active_nav == 'applications' %}active{% endif %}">
-            <span class="nav-icon">📝</span>
-            <span>Applications</span>
+          <a href="/candidates" class="nav-item-link {% if active_nav == 'candidates' %}active{% endif %}">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </span>
+            <span class="nav-label">Candidates</span>
           </a>
         </li>
         <li>
-          <a href="/candidates" class="nav-link {% if active_nav == 'candidates' %}active{% endif %}">
-            <span class="nav-icon">👥</span>
-            <span>Candidates</span>
+          <a href="/vacancies/import-jd" class="nav-item-link {% if active_nav == 'import_jd' %}active{% endif %}">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+            </span>
+            <span class="nav-label">JD Import</span>
           </a>
         </li>
+
+        <li class="sidebar-divider"></li>
+
         <li>
-          <a href="/settings" class="nav-link {% if active_nav == 'settings' %}active{% endif %}">
-            <span class="nav-icon">⚙️</span>
-            <span>Settings</span>
+          <a href="/settings" class="nav-item-link {% if active_nav == 'settings' %}active{% endif %}">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+            </span>
+            <span class="nav-label">Settings</span>
           </a>
         </li>
       </ul>
 
+      <!-- User Profile & Collapse Toggle -->
       <div class="sidebar-footer">
-        <div class="user-badge">
-          <div class="user-avatar">{{ current_user.full_name[0] if current_user else 'A' }}</div>
-          <div class="user-meta">
-            <span class="user-name">{{ current_user.full_name if current_user else 'HR Admin' }}</span>
-            <span class="user-role">{{ current_user.role if current_user else 'admin' }}</span>
+        <div class="user-profile-pill">
+          <div class="avatar-initials">{{ current_user.full_name[:2].upper() if current_user and current_user.full_name else 'HR' }}</div>
+          <div class="user-text">
+            <span class="user-fullname">{{ current_user.full_name or current_user.username or 'HR Manager' }}</span>
+            <span class="user-role-badge">{{ current_user.role or 'Administrator' }}</span>
           </div>
         </div>
-        <a href="/logout" class="logout-btn" title="Log out">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-        </a>
+        <button class="sidebar-collapse-btn" title="Toggle Sidebar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="11 17 6 12 11 7"></polyline>
+            <polyline points="18 17 13 12 18 7"></polyline>
+          </svg>
+        </button>
       </div>
     </aside>
 
-    <!-- Main Content Area -->
-    <div class="main-wrapper">
-      <header class="topbar">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <button id="sidebar-toggle" class="btn btn-secondary btn-sm" style="display: none;">☰</button>
-          <h1 class="page-title">{% block page_title %}Overview{% endblock %}</h1>
+    <!-- Main Viewport -->
+    <div class="main-content-viewport">
+      <!-- Top Navigation Bar -->
+      <header class="top-header">
+        <div class="header-greeting-block">
+          <h1 class="greeting-text">{% block page_greeting %}Good day, {{ current_user.full_name or current_user.username or 'HR Team' }}{% endblock %}</h1>
+          <p class="greeting-subtext">{% block page_subtext %}Recruitment overview and candidate pipeline{% endblock %}</p>
         </div>
-        <div class="topbar-actions">
+
+        <div class="header-right-tools">
           {% block topbar_actions %}{% endblock %}
+          <div class="date-badge">
+            {% block current_date_display %}Today{% endblock %}
+          </div>
+          <a href="/logout" class="btn btn-secondary btn-sm" title="Log out">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span>Log out</span>
+          </a>
         </div>
       </header>
 
-      <main class="content-body">
+      <!-- Main Page Content -->
+      <main class="page-container">
         {% block content %}{% endblock %}
       </main>
     </div>
   </div>
 
-  <div id="toast-container" class="toast-container"></div>
+  <!-- Global Confirmation Modal -->
+  <div class="modal-overlay" id="globalConfirmModal">
+    <div class="modal-card">
+      <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--text-primary);" id="modalTitle">Confirm Action</h3>
+      <p style="font-size: 13.5px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5;" id="modalMessage">Are you sure you want to proceed?</p>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn btn-secondary" id="modalCancelBtn">Cancel</button>
+        <button class="btn btn-primary" id="modalConfirmBtn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
   <script src="/static/js/dashboard.js"></script>
-  {% block scripts %}{% endblock %}
+  {% block extra_scripts %}{% endblock %}
 </body>
 </html>

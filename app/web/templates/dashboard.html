@@ -1,140 +1,304 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard Overview{% endblock %}
-{% block page_title %}Recruitment Overview{% endblock %}
+{% block title %}Dashboard - Recruitment Overview{% endblock %}
+
+{% block page_greeting %}{{ greeting }}, {{ current_user.full_name or current_user.username }}{% endblock %}
+{% block page_subtext %}Here's your Recruitment Overview and candidate pipeline.{% endblock %}
+{% block current_date_display %}{{ current_date }}{% endblock %}
 
 {% block topbar_actions %}
-<a href="/vacancies/import-jd" class="btn btn-primary">
-  <span>📥 Import JD</span>
+<a href="/vacancies/import-jd" class="btn btn-secondary btn-sm">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+    <polyline points="17 8 12 3 7 8"></polyline>
+    <line x1="12" y1="3" x2="12" y2="15"></line>
+  </svg>
+  <span>Import JD</span>
 </a>
-<a href="/applications" class="btn btn-secondary">
-  <span>View All Applications</span>
+<a href="/applications" class="btn btn-primary btn-sm">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+    <polyline points="14 2 14 8 20 8"></polyline>
+  </svg>
+  <span>View Applications</span>
 </a>
 {% endblock %}
 
 {% block content %}
-<!-- Metrics Cards -->
-<div class="metrics-grid">
-  <div class="metric-card">
-    <div class="metric-info">
-      <h3>Total Applications</h3>
-      <div class="metric-number">{{ metrics.total_applications }}</div>
+<!-- SaaS KPI Cards Grid -->
+<div class="kpi-grid">
+  <!-- Total Applications -->
+  <div class="kpi-card">
+    <div class="kpi-header">
+      <span class="kpi-label">Total Applications</span>
+      <div class="kpi-icon-pill kpi-icon-blue">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+        </svg>
+      </div>
     </div>
-    <div class="metric-icon-box icon-blue">📋</div>
+    <div class="kpi-value">{{ kpis.total_applications }}</div>
+    <div class="kpi-footer">
+      <span class="kpi-pill kpi-pill-blue">Active</span>
+      <span>Across all positions</span>
+    </div>
   </div>
 
-  <div class="metric-card">
-    <div class="metric-info">
-      <h3>New Applications</h3>
-      <div class="metric-number">{{ metrics.new_applications }}</div>
+  <!-- New Applications -->
+  <div class="kpi-card">
+    <div class="kpi-header">
+      <span class="kpi-label">New Applications</span>
+      <div class="kpi-icon-pill kpi-icon-amber">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </div>
     </div>
-    <div class="metric-icon-box icon-amber">🆕</div>
+    <div class="kpi-value">{{ kpis.new_applications }}</div>
+    <div class="kpi-footer">
+      <span class="kpi-pill kpi-pill-amber">Needs review</span>
+      <span>Pending initial screening</span>
+    </div>
   </div>
 
-  <div class="metric-card">
-    <div class="metric-info">
-      <h3>Received Today</h3>
-      <div class="metric-number">{{ metrics.applications_today }}</div>
+  <!-- Open Vacancies -->
+  <div class="kpi-card">
+    <div class="kpi-header">
+      <span class="kpi-label">Open Vacancies</span>
+      <div class="kpi-icon-pill kpi-icon-green">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+        </svg>
+      </div>
     </div>
-    <div class="metric-icon-box icon-green">🕒</div>
+    <div class="kpi-value">{{ kpis.open_vacancies }}</div>
+    <div class="kpi-footer">
+      <span class="kpi-pill kpi-pill-green">Published</span>
+      <span>Currently accepting CVs</span>
+    </div>
   </div>
 
-  <div class="metric-card">
-    <div class="metric-info">
-      <h3>Published Vacancies</h3>
-      <div class="metric-number">{{ metrics.published_vacancies }}</div>
+  <!-- Strong Fit Candidates -->
+  <div class="kpi-card">
+    <div class="kpi-header">
+      <span class="kpi-label">Strong Fit</span>
+      <div class="kpi-icon-pill kpi-icon-purple">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+        </svg>
+      </div>
     </div>
-    <div class="metric-icon-box icon-purple">💼</div>
+    <div class="kpi-value">{{ kpis.strong_fit_count }}</div>
+    <div class="kpi-footer">
+      <span class="kpi-pill kpi-pill-blue">AI Preliminary</span>
+      <span>Score &ge; 75% match</span>
+    </div>
   </div>
 </div>
 
-<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
-  <!-- Recent Applications -->
-  <div class="panel">
-    <div class="panel-header">
-      <div class="panel-title">Recent Candidate Applications</div>
-      <a href="/applications" style="font-size: 13px; color: #818cf8; text-decoration: none;">View all →</a>
-    </div>
-
-    <div class="table-responsive">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Application ID</th>
-            <th>Candidate</th>
-            <th>Position</th>
-            <th>Date</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% if recent_applications %}
-            {% for app in recent_applications %}
-            <tr>
-              <td><code>{{ app.application_code }}</code></td>
-              <td>
-                <div style="font-weight: 600;">{{ app.candidate.full_name }}</div>
-                <div style="font-size: 12px; color: var(--text-muted);">{{ app.candidate.phone or app.candidate.email or 'Telegram' }}</div>
-              </td>
-              <td>
-                <div style="font-weight: 500;">{{ app.vacancy.title }}</div>
-                <div style="font-size: 11px; color: var(--text-dim);">{{ app.vacancy.department or 'General' }}</div>
-              </td>
-              <td style="font-size: 12.5px; color: var(--text-muted);">{{ app.submitted_at.strftime('%d %b %Y, %H:%M') }}</td>
-              <td>
-                <span class="badge {{ get_badge_class(app.status) }}">{{ app.status }}</span>
-              </td>
-              <td>
-                <a href="/applications/{{ app.id }}" class="btn btn-secondary btn-sm">Review</a>
-              </td>
-            </tr>
-            {% endfor %}
-          {% else %}
-            <tr>
-              <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 32px;">
-                No applications received yet. Share the bot link with candidates!
-              </td>
-            </tr>
-          {% endif %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Applications Breakdown by Position & Status -->
-  <div>
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-title">Applications by Status</div>
+<!-- Modern Recruitment Analytics -->
+<div class="analytics-row">
+  <!-- Applications Over Time -->
+  <div class="analytics-card">
+    <div class="analytics-header">
+      <div>
+        <h2 class="analytics-title">Applications Over Time</h2>
+        <p class="analytics-subtitle">Candidate submission volume trend</p>
       </div>
-      <div style="display: flex; flex-direction: column; gap: 12px;">
-        {% for status_name, count in metrics.by_status.items() %}
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13.5px;">
-          <span class="badge {{ get_badge_class(status_name) }}">{{ status_name }}</span>
-          <span style="font-weight: 700; color: var(--text-main);">{{ count }}</span>
-        </div>
+      <div style="display: flex; gap: 6px;">
+        <button class="btn btn-primary btn-sm" id="tabTimeline7d">Last 7 Days</button>
+        <button class="btn btn-secondary btn-sm" id="tabTimeline30d">Last 30 Days</button>
+      </div>
+    </div>
+
+    <!-- 7 Days View -->
+    <div class="chart-container" id="viewTimeline7d">
+      <div class="timeline-bars-wrap">
+        {% set max_7d = 1 %}
+        {% for item in kpis.timeline_7d %}
+          {% if item.count > max_7d %}{% set max_7d = item.count %}{% endif %}
+        {% endfor %}
+
+        {% for item in kpis.timeline_7d %}
+          {% set bar_height = (item.count / max_7d * 100) if max_7d > 0 else 5 %}
+          {% set visual_height = bar_height if bar_height >= 8 else 8 %}
+          <div class="timeline-bar-col">
+            <div class="bar-visual" style="height: {{ visual_height }}%;" title="{{ item.date }}: {{ item.count }} applications">
+              <span class="bar-count-tooltip">{{ item.count }}</span>
+            </div>
+            <span class="bar-day-label">{{ item.day }}</span>
+          </div>
         {% endfor %}
       </div>
     </div>
 
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-title">Applications by Position</div>
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 10px;">
-        {% if metrics.by_position %}
-          {% for pos_name, count in metrics.by_position.items() %}
-          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
-            <span style="color: var(--text-muted); font-weight: 500;">{{ pos_name }}</span>
-            <span style="font-weight: 700; color: #818cf8;">{{ count }}</span>
+    <!-- 30 Days View (Hidden initially) -->
+    <div class="chart-container" id="viewTimeline30d" style="display: none;">
+      <div class="timeline-bars-wrap" style="gap: 3px;">
+        {% set max_30d = 1 %}
+        {% for item in kpis.timeline_30d %}
+          {% if item.count > max_30d %}{% set max_30d = item.count %}{% endif %}
+        {% endfor %}
+
+        {% for item in kpis.timeline_30d %}
+          {% set bar_height = (item.count / max_30d * 100) if max_30d > 0 else 5 %}
+          {% set visual_height = bar_height if bar_height >= 6 else 6 %}
+          <div class="timeline-bar-col" style="gap: 4px;">
+            <div class="bar-visual" style="height: {{ visual_height }}%; max-width: 14px;" title="{{ item.day }}: {{ item.count }} applications">
+              {% if item.count > 0 %}<span class="bar-count-tooltip" style="font-size: 8px;">{{ item.count }}</span>{% endif %}
+            </div>
           </div>
-          {% endfor %}
-        {% else %}
-          <div style="font-size: 13px; color: var(--text-muted);">No active positions with applications.</div>
-        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Status Pipeline Distribution -->
+    <div class="status-pipeline-wrap">
+      <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px;">
+        <span style="font-weight: 600; color: var(--text-secondary);">Application Pipeline Distribution</span>
+        <span style="color: var(--text-tertiary);">{{ kpis.total_applications }} total</span>
+      </div>
+
+      <div class="pipeline-bar">
+        {% set total = kpis.total_applications if kpis.total_applications > 0 else 1 %}
+        {% set p_new = (kpis.status_distribution['New'] / total * 100)|round(1) %}
+        {% set p_rev = (kpis.status_distribution['Under Review'] / total * 100)|round(1) %}
+        {% set p_short = (kpis.status_distribution['Shortlisted'] / total * 100)|round(1) %}
+        {% set p_int = (kpis.status_distribution['Interview'] / total * 100)|round(1) %}
+        {% set p_sel = (kpis.status_distribution['Selected'] / total * 100)|round(1) %}
+        {% set p_rej = (kpis.status_distribution['Rejected'] / total * 100)|round(1) %}
+
+        {% if p_new > 0 %}<div class="pipeline-segment" style="width: {{ p_new }}%; background: #6366f1;" title="New: {{ kpis.status_distribution['New'] }}"></div>{% endif %}
+        {% if p_rev > 0 %}<div class="pipeline-segment" style="width: {{ p_rev }}%; background: #f59e0b;" title="Under Review: {{ kpis.status_distribution['Under Review'] }}"></div>{% endif %}
+        {% if p_short > 0 %}<div class="pipeline-segment" style="width: {{ p_short }}%; background: #38bdf8;" title="Shortlisted: {{ kpis.status_distribution['Shortlisted'] }}"></div>{% endif %}
+        {% if p_int > 0 %}<div class="pipeline-segment" style="width: {{ p_int }}%; background: #c084fc;" title="Interview: {{ kpis.status_distribution['Interview'] }}"></div>{% endif %}
+        {% if p_sel > 0 %}<div class="pipeline-segment" style="width: {{ p_sel }}%; background: #10b981;" title="Selected: {{ kpis.status_distribution['Selected'] }}"></div>{% endif %}
+        {% if p_rej > 0 %}<div class="pipeline-segment" style="width: {{ p_rej }}%; background: #ef4444;" title="Rejected: {{ kpis.status_distribution['Rejected'] }}"></div>{% endif %}
+      </div>
+
+      <div class="pipeline-legend">
+        <div class="legend-item"><span class="legend-dot" style="background: #6366f1;"></span><span>New ({{ kpis.status_distribution['New'] }})</span></div>
+        <div class="legend-item"><span class="legend-dot" style="background: #f59e0b;"></span><span>Under Review ({{ kpis.status_distribution['Under Review'] }})</span></div>
+        <div class="legend-item"><span class="legend-dot" style="background: #38bdf8;"></span><span>Shortlisted ({{ kpis.status_distribution['Shortlisted'] }})</span></div>
+        <div class="legend-item"><span class="legend-dot" style="background: #c084fc;"></span><span>Interview ({{ kpis.status_distribution['Interview'] }})</span></div>
+        <div class="legend-item"><span class="legend-dot" style="background: #10b981;"></span><span>Selected ({{ kpis.status_distribution['Selected'] }})</span></div>
       </div>
     </div>
   </div>
+
+  <!-- Applications by Position -->
+  <div class="analytics-card">
+    <div class="analytics-header">
+      <div>
+        <h2 class="analytics-title">Applications by Position</h2>
+        <p class="analytics-subtitle">Most active recruitment roles</p>
+      </div>
+    </div>
+
+    {% if kpis.by_position %}
+      {% set max_pos = 1 %}
+      {% for pos, count in kpis.by_position.items() %}
+        {% if count > max_pos %}{% set max_pos = count %}{% endif %}
+      {% endfor %}
+
+      <div class="ranked-list">
+        {% for pos, count in kpis.by_position.items() %}
+          {% set pct = (count / max_pos * 100)|round(0) if max_pos > 0 else 0 %}
+          <div class="ranked-item">
+            <div class="ranked-item-meta">
+              <span class="ranked-title" title="{{ pos }}">{{ pos }}</span>
+              <span class="ranked-count">{{ count }}</span>
+            </div>
+            <div class="ranked-bar-track">
+              <div class="ranked-bar-fill" style="width: {{ pct }}%;"></div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p class="empty-desc">No applications recorded yet.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Recent Applications Section -->
+<div class="section-panel">
+  <div class="section-panel-header">
+    <div>
+      <h3 style="font-size: 14.5px; font-weight: 700; color: var(--text-primary);">Recent Applications</h3>
+      <p style="font-size: 12px; color: var(--text-secondary);">Latest candidate CV submissions across all vacancies</p>
+    </div>
+    <a href="/applications" class="btn btn-secondary btn-sm">
+      <span>View All Applications &rarr;</span>
+    </a>
+  </div>
+
+  {% if recent_applications %}
+    <div class="table-scroller">
+      <table class="saas-table">
+        <thead>
+          <tr>
+            <th>Candidate</th>
+            <th>Position</th>
+            <th>Applied</th>
+            <th>AI Preliminary Fit</th>
+            <th>Status</th>
+            <th style="text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for app in recent_applications %}
+            {% set fit = get_fit(app) %}
+            <tr>
+              <td>
+                <div class="candidate-cell">
+                  <div class="candidate-avatar">{{ get_initials(app.candidate.full_name) }}</div>
+                  <div class="candidate-meta">
+                    <span class="candidate-name">{{ app.candidate.full_name or 'Candidate' }}</span>
+                    <span class="candidate-sub">{{ app.candidate.phone or app.candidate.email or '@' + (app.candidate.telegram_username or '') }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div style="display: flex; flex-direction: column;">
+                  <span style="font-weight: 600; color: var(--text-primary);">{{ app.vacancy.title if app.vacancy else 'Position' }}</span>
+                  <span style="font-size: 11.5px; color: var(--text-tertiary);">{{ app.vacancy.department if app.vacancy else 'General' }}</span>
+                </div>
+              </td>
+              <td>
+                <span style="color: var(--text-secondary); font-size: 12.5px;">{{ format_date(app.submitted_at) }}</span>
+              </td>
+              <td>
+                <span class="fit-badge {{ fit.badge_class }}" title="AI Preliminary Fit: {{ fit.label }}">
+                  <span>{{ fit.score }}%</span>
+                  <span style="font-size: 10px; opacity: 0.85;">{{ fit.label }}</span>
+                </span>
+              </td>
+              <td>
+                <span class="status-pill {{ get_badge_class(app.status) }}">{{ app.status }}</span>
+              </td>
+              <td style="text-align: right;">
+                <a href="/applications/{{ app.id }}" class="btn btn-secondary btn-sm">
+                  <span>View</span>
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">📥</div>
+      <h4 class="empty-title">No applications yet</h4>
+      <p class="empty-desc">Applications will appear here as soon as candidates apply via the Telegram bot.</p>
+    </div>
+  {% endif %}
 </div>
 {% endblock %}

@@ -1,123 +1,104 @@
 {% extends "base.html" %}
 
-{% block title %}Settings{% endblock %}
-{% block page_title %}Recruitment & Notification Settings{% endblock %}
+{% block title %}Settings - Recruitment Workspace{% endblock %}
+
+{% block page_greeting %}Workspace Settings{% endblock %}
+{% block page_subtext %}Configure Telegram notifications, duplicate CV rules, and AI screening services.{% endblock %}
 
 {% block content %}
-<div style="max-width: 800px; margin: 0 auto;">
-  {% if message %}
-  <div style="background: var(--success-bg); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; padding: 14px; border-radius: 8px; font-size: 13.5px; margin-bottom: 24px;">
-    {{ message }}
-  </div>
+<div style="max-width: 800px; display: flex; flex-direction: column; gap: 24px;">
+
+  {% if success_msg %}
+    <div style="background: var(--success-bg); border: 1px solid var(--success-border); border-radius: var(--radius-sm); padding: 12px 16px; color: #34d399; font-size: 13.5px; font-weight: 500;">
+      ✓ {{ success_msg }}
+    </div>
   {% endif %}
 
-  {% if error %}
-  <div style="background: var(--danger-bg); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; padding: 14px; border-radius: 8px; font-size: 13.5px; margin-bottom: 24px;">
-    {{ error }}
-  </div>
-  {% endif %}
+  <form method="POST" action="/settings" style="display: flex; flex-direction: column; gap: 20px;">
+    
+    <!-- Telegram Alerts Configuration -->
+    <div class="section-panel" style="margin-bottom: 0;">
+      <div class="section-panel-header">
+        <div>
+          <h3 style="font-size: 14.5px; font-weight: 700; color: var(--text-primary);">Telegram Notifications Configuration</h3>
+          <p style="font-size: 12px; color: var(--text-secondary);">Real-time application reports and candidate CV forwarding</p>
+        </div>
+      </div>
 
-  <!-- HR Telegram Notification Settings -->
-  <div class="panel">
-    <div class="panel-header">
-      <div>
-        <div class="panel-title">Telegram Notifications Configuration</div>
-        <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
-          Configure where and how real-time recruitment alerts are dispatched.
+      <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+        <div>
+          <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">HR Telegram Chat / Group ID</label>
+          <input type="text" name="hr_telegram_chat_id" value="{{ settings_dict.get('hr_telegram_chat_id', '') }}" class="form-control" placeholder="e.g. -100123456789 or your personal Telegram Chat ID">
+          <span style="font-size: 11.5px; color: var(--text-tertiary); display: block; margin-top: 4px;">The Telegram Chat or Group where new candidate notifications and attached CVs are forwarded.</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px;">
+          <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-primary); cursor: pointer;">
+            <input type="checkbox" name="notifications_enabled" value="true" {% if settings_dict.get('notifications_enabled', 'true') == 'true' %}checked{% endif %} style="width: 16px; height: 16px; accent-color: #6366f1;">
+            <span>Enable real-time Telegram notifications</span>
+          </label>
+
+          <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-primary); cursor: pointer;">
+            <input type="checkbox" name="notify_on_duplicates" value="true" {% if settings_dict.get('notify_on_duplicates', 'true') == 'true' %}checked{% endif %} style="width: 16px; height: 16px; accent-color: #6366f1;">
+            <span>Notify HR when a candidate updates an existing application CV</span>
+          </label>
+
+          <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-primary); cursor: pointer;">
+            <input type="checkbox" name="include_ai_summary" value="true" {% if settings_dict.get('include_ai_summary', 'true') == 'true' %}checked{% endif %} style="width: 16px; height: 16px; accent-color: #6366f1;">
+            <span>Include AI Preliminary Assessment in Telegram alert messages</span>
+          </label>
         </div>
       </div>
     </div>
 
-    <form action="/settings" method="POST">
-      <div class="form-group">
-        <label class="form-label" for="hr_telegram_chat_id">HR Telegram Chat / Group ID *</label>
-        <input type="text" id="hr_telegram_chat_id" name="hr_telegram_chat_id" class="form-control" value="{{ settings_dict.get('hr_telegram_chat_id', '') }}" placeholder="e.g. -100123456789 or your personal Telegram ID">
-        <div style="font-size: 12px; color: var(--text-dim); margin-top: 4px;">
-          Add your Telegram Bot to your HR recruitment group or chat and enter the Chat ID here.
+    <!-- Duplicate Policy & Screening Rules -->
+    <div class="section-panel" style="margin-bottom: 0;">
+      <div class="section-panel-header">
+        <div>
+          <h3 style="font-size: 14.5px; font-weight: 700; color: var(--text-primary);">Recruitment & Duplicate Policy</h3>
+          <p style="font-size: 12px; color: var(--text-secondary);">How the bot handles candidate re-applications for the same role</p>
         </div>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-        <div class="form-group">
-          <label class="form-label" for="notifications_enabled">Notifications Status</label>
-          <select id="notifications_enabled" name="notifications_enabled" class="form-control">
-            <option value="true" {% if settings_dict.get('notifications_enabled', 'true') == 'true' %}selected{% endif %}>Enabled (Send alerts on new CV)</option>
-            <option value="false" {% if settings_dict.get('notifications_enabled') == 'false' %}selected{% endif %}>Disabled (Mute all alerts)</option>
-          </select>
-        </div>
+      <div style="padding: 20px;">
+        <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Duplicate CV Handling Rule</label>
+        <select name="duplicate_cv_policy" class="form-control">
+          <option value="prompt_update" {% if settings_dict.get('duplicate_cv_policy') == 'prompt_update' %}selected{% endif %}>Prompt candidate to confirm updating their existing application (Recommended)</option>
+          <option value="keep_original" {% if settings_dict.get('duplicate_cv_policy') == 'keep_original' %}selected{% endif %}>Reject duplicate submission and keep original CV</option>
+          <option value="allow_all" {% if settings_dict.get('duplicate_cv_policy') == 'allow_all' %}selected{% endif %}>Create separate new application record automatically</option>
+        </select>
+      </div>
+    </div>
 
-        <div class="form-group">
-          <label class="form-label" for="include_ai_summary">Include AI Summary in Alert</label>
-          <select id="include_ai_summary" name="include_ai_summary" class="form-control">
-            <option value="true" {% if settings_dict.get('include_ai_summary', 'true') == 'true' %}selected{% endif %}>Yes, include candidate summary</option>
-            <option value="false" {% if settings_dict.get('include_ai_summary') == 'false' %}selected{% endif %}>No, standard notification only</option>
-          </select>
+    <!-- AI Service Provider Configuration -->
+    <div class="section-panel" style="margin-bottom: 0;">
+      <div class="section-panel-header">
+        <div>
+          <h3 style="font-size: 14.5px; font-weight: 700; color: var(--text-primary);">AI Screening Provider</h3>
+          <p style="font-size: 12px; color: var(--text-secondary);">Rule-based heuristic or LLM integration</p>
         </div>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-        <div class="form-group">
-          <label class="form-label" for="notify_on_duplicates">Alert on Duplicate Submissions</label>
-          <select id="notify_on_duplicates" name="notify_on_duplicates" class="form-control">
-            <option value="true" {% if settings_dict.get('notify_on_duplicates', 'true') == 'true' %}selected{% endif %}>Yes, notify when candidate updates CV</option>
-            <option value="false" {% if settings_dict.get('notify_on_duplicates') == 'false' %}selected{% endif %}>No, silent update</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="duplicate_cv_policy">Duplicate Application Policy</label>
-          <select id="duplicate_cv_policy" name="duplicate_cv_policy" class="form-control">
-            <option value="allow_update" {% if settings_dict.get('duplicate_cv_policy', 'allow_update') == 'allow_update' %}selected{% endif %}>Allow candidate to submit updated CV</option>
-            <option value="reject" {% if settings_dict.get('duplicate_cv_policy') == 'reject' %}selected{% endif %}>Block duplicate applications</option>
-          </select>
-        </div>
+      <div style="padding: 20px;">
+        <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Active AI Engine</label>
+        <select name="ai_provider" class="form-control">
+          <option value="heuristic" {% if settings_dict.get('ai_provider') == 'heuristic' %}selected{% endif %}>Built-in Heuristic Matcher (Fast, Local, Zero external API dependencies)</option>
+          <option value="openai" {% if settings_dict.get('ai_provider') == 'openai' %}selected{% endif %}>OpenAI GPT (Requires OPENAI_API_KEY in .env)</option>
+          <option value="gemini" {% if settings_dict.get('ai_provider') == 'gemini' %}selected{% endif %}>Google Gemini (Requires GEMINI_API_KEY in .env)</option>
+        </select>
       </div>
+    </div>
 
-      <div class="panel-header" style="margin-top: 24px; border-top: 1px solid var(--border-color); padding-top: 20px;">
-        <div class="panel-title">AI & Smart Parsing Options</div>
-      </div>
+    <!-- Actions -->
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <button type="submit" formaction="/settings/test-telegram" class="btn btn-secondary">
+        <span>🔔 Send Test Ping to HR Chat</span>
+      </button>
+      <button type="submit" class="btn btn-primary">
+        <span>Save All Settings</span>
+      </button>
+    </div>
+  </form>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-        <div class="form-group">
-          <label class="form-label" for="ai_provider">AI Service Provider</label>
-          <select id="ai_provider" name="ai_provider" class="form-control">
-            <option value="none" {% if settings_dict.get('ai_provider', 'none') == 'none' %}selected{% endif %}>Local Heuristic Parser (Zero API key needed)</option>
-            <option value="openai" {% if settings_dict.get('ai_provider') == 'openai' %}selected{% endif %}>OpenAI (GPT-4 / GPT-3.5)</option>
-            <option value="gemini" {% if settings_dict.get('ai_provider') == 'gemini' %}selected{% endif %}>Google Gemini</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="ai_api_key">AI API Key (Optional)</label>
-          <input type="password" id="ai_api_key" name="ai_api_key" class="form-control" placeholder="sk-... (Leave empty to keep current)">
-        </div>
-      </div>
-
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px;">
-        <button type="button" class="btn btn-secondary" onclick="sendTestNotification()">
-          🔔 Send Test Ping to HR Chat
-        </button>
-
-        <button type="submit" class="btn btn-primary">
-          Save Settings
-        </button>
-      </div>
-    </form>
-  </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-  async function sendTestNotification() {
-    try {
-      const resp = await fetch('/settings/test-telegram', { method: 'POST' });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data.detail || 'Test ping failed');
-      showToast('Test notification sent to HR Telegram chat!', 'success');
-    } catch (err) {
-      showToast(err.message, 'danger');
-    }
-  }
-</script>
 {% endblock %}

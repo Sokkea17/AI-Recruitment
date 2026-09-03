@@ -1,3 +1,4 @@
+from app.utils.formatters import get_status_badge_class, get_candidate_initials, calculate_preliminary_fit, format_date_only, format_datetime
 from fastapi import APIRouter, Request, Depends, Form, responses
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -12,6 +13,12 @@ from app.utils.security import verify_password, create_session_token
 
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(settings.BASE_DIR, "app/web/templates"))
+templates.env.globals["get_badge_class"] = get_status_badge_class
+templates.env.globals["get_initials"] = get_candidate_initials
+templates.env.globals["get_fit"] = calculate_preliminary_fit
+templates.env.globals["format_date"] = format_date_only
+templates.env.globals["format_datetime"] = format_datetime
+
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request, next: str = "/"):

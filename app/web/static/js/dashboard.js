@@ -1,156 +1,154 @@
-// Toast System
-function showToast(message, type = 'info') {
-  let container = document.getElementById('toast-container');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'toast-container';
-    container.className = 'toast-container';
-    document.body.appendChild(container);
+// Modern SaaS HR Dashboard Client Script
+
+document.addEventListener("DOMContentLoaded", () => {
+  // 1. Sidebar Collapse Management
+  const sidebar = document.querySelector(".sidebar");
+  const collapseBtn = document.querySelector(".sidebar-collapse-btn");
+
+  if (sidebar && collapseBtn) {
+    const isCollapsed = localStorage.getItem("saas_sidebar_collapsed") === "true";
+    if (isCollapsed) {
+      sidebar.classList.add("collapsed");
+    }
+
+    collapseBtn.addEventListener("click", () => {
+      sidebar.classList.toggle("collapsed");
+      localStorage.setItem("saas_sidebar_collapsed", sidebar.classList.contains("collapsed"));
+    });
   }
 
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  
-  let icon = 'ℹ️';
-  if (type === 'success') icon = '✅';
-  if (type === 'danger' || type === 'error') icon = '❌';
-  if (type === 'warning') icon = '⚠️';
-
-  toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
-  container.appendChild(toast);
-
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transition = 'opacity 0.3s ease';
-    setTimeout(() => toast.remove(), 300);
-  }, 4000);
-}
-
-// JD File Upload & Parsing Handler
-function initJDUpload(dropzoneId, fileInputId, formId) {
-  const dropzone = document.getElementById(dropzoneId);
-  const fileInput = document.getElementById(fileInputId);
-  if (!dropzone || !fileInput) return;
-
-  ['dragenter', 'dragover'].forEach(eventName => {
-    dropzone.addEventListener(eventName, (e) => {
-      e.preventDefault();
-      dropzone.classList.add('dragover');
-    }, false);
-  });
-
-  ['dragleave', 'drop'].forEach(eventName => {
-    dropzone.addEventListener(eventName, (e) => {
-      e.preventDefault();
-      dropzone.classList.remove('dragover');
-    }, false);
-  });
-
-  dropzone.addEventListener('drop', (e) => {
-    const files = e.dataTransfer.files;
-    if (files.length) {
-      fileInput.files = files;
-      handleJDFileSelected(files[0]);
-    }
-  });
-
-  fileInput.addEventListener('change', (e) => {
-    if (fileInput.files.length) {
-      handleJDFileSelected(fileInput.files[0]);
-    }
-  });
-}
-
-async function handleJDFileSelected(file) {
-  const previewBox = document.getElementById('extraction-preview');
-  const loadingIndicator = document.getElementById('upload-loading');
-  
-  if (loadingIndicator) loadingIndicator.style.display = 'block';
-  if (previewBox) previewBox.style.display = 'none';
-
-  const formData = new FormData();
-  formData.append('jd_file', file);
-
-  try {
-    const resp = await fetch('/vacancies/upload-jd', {
-      method: 'POST',
-      body: formData
-    });
-
-    const data = await resp.json();
-    if (!resp.ok) {
-      throw new Error(data.detail || 'Failed to extract JD information.');
-    }
-
-    // Populate extracted fields into form
-    if (data.extracted) {
-      const ext = data.extracted;
-      setVal('title', ext.title);
-      setVal('department', ext.department);
-      setVal('location', ext.location);
-      setVal('employment_type', ext.employment_type);
-      setVal('salary_range', ext.salary_range);
-      setVal('short_description', ext.short_description);
-      setVal('responsibilities', ext.responsibilities);
-      setVal('requirements', ext.requirements);
-      setVal('education', ext.education);
-      setVal('experience', ext.experience);
-      setVal('skills', ext.skills);
-      setVal('instructions', ext.instructions);
-      setVal('full_description', ext.full_description);
-
-      // Multi-position indicator
-      const multiBox = document.getElementById('multi-position-alert');
-      if (multiBox) {
-        if (ext.positions_detected && ext.positions_detected.length > 1) {
-          multiBox.style.display = 'block';
-          const posList = ext.positions_detected.map(p => `<b>${p.title}</b>`).join(', ');
-          multiBox.innerHTML = `⚠️ <b>Multiple Positions Detected:</b> ${posList}. You can review and create this vacancy, or split them.`;
-        } else {
-          multiBox.style.display = 'none';
-        }
+  // 2. Global Modal Confirmation Logic
+  window.openConfirmModal = function(title, message, confirmBtnText, onConfirm) {
+    const overlay = document.getElementById("globalConfirmModal");
+    if (!overlay) {
+      if (confirm(message)) {
+        onConfirm();
       }
+      return;
     }
 
-    if (previewBox) previewBox.style.display = 'block';
-    showToast('JD extracted successfully! Please review before publishing.', 'success');
-  } catch (err) {
-    showToast(err.message, 'danger');
-  } finally {
-    if (loadingIndicator) loadingIndicator.style.display = 'none';
-  }
-}
+    document.getElementById("modalTitle").innerText = title;
+    document.getElementById("modalMessage").innerText = message;
+    const confirmBtn = document.getElementById("modalConfirmBtn");
+    confirmBtn.innerText = confirmBtnText || "Confirm";
 
-function setVal(id, value) {
-  const el = document.getElementById(id);
-  if (el && value !== null && value !== undefined) {
-    el.value = value;
-  }
-}
+    const closeHandler = () => {
+      overlay.classList.remove("active");
+      confirmBtn.onclick = null;
+    };
 
-// Quick Status Update
-async function updateApplicationStatus(appId, newStatus) {
-  try {
-    const resp = await fetch(`/applications/${appId}/status`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus })
+    document.getElementById("modalCancelBtn").onclick = closeHandler;
+    confirmBtn.onclick = () => {
+      closeHandler();
+      onConfirm();
+    };
+
+    overlay.classList.add("active");
+  };
+
+  // 3. Toast Notifications
+  window.showToast = function(message, type = "info") {
+    const container = document.getElementById("toastContainer") || document.body;
+    const toast = document.createElement("div");
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ'}</span> <span>${message}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = "0";
+      toast.style.transition = "opacity 0.3s ease";
+      setTimeout(() => toast.remove(), 300);
+    }, 3500);
+  };
+
+  // 4. Quick Status Update Dropdowns
+  document.querySelectorAll(".quick-status-select").forEach(select => {
+    select.addEventListener("change", async (e) => {
+      const appId = select.dataset.appId;
+      const newStatus = select.value;
+      const originalValue = select.dataset.current;
+
+      try {
+        const resp = await fetch(`/applications/${appId}/status`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          body: JSON.stringify({ status: newStatus })
+        });
+
+        if (resp.ok) {
+          select.dataset.current = newStatus;
+          showToast(`Status updated to ${newStatus}`, "success");
+        } else {
+          select.value = originalValue;
+          showToast("Failed to update status", "error");
+        }
+      } catch (err) {
+        select.value = originalValue;
+        showToast("Network error updating status", "error");
+      }
     });
-    const data = await resp.json();
-    if (!resp.ok) throw new Error(data.detail || 'Failed to update status');
-    showToast(`Status updated to ${newStatus}`, 'success');
-  } catch (err) {
-    showToast(err.message, 'danger');
-  }
-}
+  });
 
-document.addEventListener('DOMContentLoaded', () => {
-  // Mobile sidebar toggle
-  const toggleBtn = document.getElementById('sidebar-toggle');
-  const sidebar = document.querySelector('.sidebar');
-  if (toggleBtn && sidebar) {
-    toggleBtn.addEventListener('click', () => {
-      sidebar.classList.toggle('open');
+  // 5. Regenerate AI Summary on Application Detail Page
+  const regenBtn = document.getElementById("btnRegenerateAI");
+  if (regenBtn) {
+    regenBtn.addEventListener("click", async () => {
+      const appId = regenBtn.dataset.appId;
+      regenBtn.disabled = true;
+      const originalText = regenBtn.innerHTML;
+      regenBtn.innerHTML = `<span>⏳ Analyzing...</span>`;
+
+      try {
+        const resp = await fetch(`/applications/${appId}/regenerate-ai`, {
+          method: "POST",
+          headers: {
+            "Accept": "application/json",
+            "X-Requested-With": "XMLHttpRequest"
+          }
+        });
+
+        if (resp.ok) {
+          const data = await resp.json();
+          showToast("AI Summary regenerated successfully!", "success");
+          setTimeout(() => window.location.reload(), 600);
+        } else {
+          showToast("Unable to regenerate AI Summary", "error");
+          regenBtn.disabled = false;
+          regenBtn.innerHTML = originalText;
+        }
+      } catch (err) {
+        showToast("Error connecting to server", "error");
+        regenBtn.disabled = false;
+        regenBtn.innerHTML = originalText;
+      }
+    });
+  }
+
+  // 6. Interactive Timeline Tab Switching (7 Days vs 30 Days)
+  const tab7d = document.getElementById("tabTimeline7d");
+  const tab30d = document.getElementById("tabTimeline30d");
+  const view7d = document.getElementById("viewTimeline7d");
+  const view30d = document.getElementById("viewTimeline30d");
+
+  if (tab7d && tab30d && view7d && view30d) {
+    tab7d.addEventListener("click", () => {
+      tab7d.classList.add("btn-primary");
+      tab7d.classList.remove("btn-secondary");
+      tab30d.classList.add("btn-secondary");
+      tab30d.classList.remove("btn-primary");
+      view7d.style.display = "flex";
+      view30d.style.display = "none";
+    });
+
+    tab30d.addEventListener("click", () => {
+      tab30d.classList.add("btn-primary");
+      tab30d.classList.remove("btn-secondary");
+      tab7d.classList.add("btn-secondary");
+      tab7d.classList.remove("btn-primary");
+      view7d.style.display = "none";
+      view30d.style.display = "flex";
     });
   }
 });

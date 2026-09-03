@@ -1,3 +1,4 @@
+from app.utils.formatters import get_status_badge_class, get_candidate_initials, calculate_preliminary_fit, format_date_only, format_datetime
 import os
 from typing import Optional
 from fastapi import APIRouter, Request, Depends, Form, HTTPException, status
@@ -16,6 +17,12 @@ from app.web.auth import get_current_user_required
 
 router = APIRouter(prefix="/settings")
 templates = Jinja2Templates(directory=os.path.join(settings.BASE_DIR, "app/web/templates"))
+templates.env.globals["get_badge_class"] = get_status_badge_class
+templates.env.globals["get_initials"] = get_candidate_initials
+templates.env.globals["get_fit"] = calculate_preliminary_fit
+templates.env.globals["format_date"] = format_date_only
+templates.env.globals["format_datetime"] = format_datetime
+
 
 @router.get("", response_class=HTMLResponse)
 async def view_settings(
