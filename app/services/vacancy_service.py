@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional, Tuple, Dict, Any
-from sqlalchemy import select, func, desc, or_
+from sqlalchemy import select, func, desc, or_, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -75,16 +75,21 @@ class VacancyService:
         if to_date:
             stmt = stmt.where(Vacancy.created_at <= to_date)
         if search and search.strip():
-            term = f"%{search.strip()}%"
-            stmt = stmt.where(
-                or_(
-                    Vacancy.title.ilike(term),
-                    Vacancy.vacancy_code.ilike(term),
-                    Vacancy.department.ilike(term),
-                    Vacancy.location.ilike(term),
-                    Vacancy.skills.ilike(term)
+            words = [w for w in search.strip().split() if w]
+            vac_conditions = []
+            for word in words:
+                w_term = f"%{word}%"
+                vac_conditions.append(
+                    or_(
+                        Vacancy.title.ilike(w_term),
+                        Vacancy.vacancy_code.ilike(w_term),
+                        Vacancy.department.ilike(w_term),
+                        Vacancy.location.ilike(w_term),
+                        Vacancy.skills.ilike(w_term),
+                        Vacancy.requirements.ilike(w_term)
+                    )
                 )
-            )
+            stmt = stmt.where(and_(*vac_conditions))
         result = await session.execute(stmt)
         return list(result.scalars().all())
 

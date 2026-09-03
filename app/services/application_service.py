@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional, Tuple
-from sqlalchemy import select, func, desc, or_
+from sqlalchemy import select, func, desc, or_, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from telegram import Bot
@@ -224,18 +224,23 @@ class ApplicationService:
         if to_date:
             stmt = stmt.where(Application.submitted_at <= to_date)
         if search and search.strip():
-            search_term = f"%{search.strip()}%"
-            stmt = stmt.where(
-                or_(
-                    Application.application_code.ilike(search_term),
-                    Candidate.full_name.ilike(search_term),
-                    Candidate.email.ilike(search_term),
-                    Candidate.phone.ilike(search_term),
-                    Candidate.telegram_username.ilike(search_term),
-                    Vacancy.title.ilike(search_term),
-                    Vacancy.department.ilike(search_term)
+            words = [w for w in search.strip().split() if w]
+            search_conditions = []
+            for word in words:
+                w_term = f"%{word}%"
+                search_conditions.append(
+                    or_(
+                        Application.application_code.ilike(w_term),
+                        Candidate.full_name.ilike(w_term),
+                        Candidate.email.ilike(w_term),
+                        Candidate.phone.ilike(w_term),
+                        Candidate.telegram_username.ilike(w_term),
+                        Vacancy.title.ilike(w_term),
+                        Vacancy.department.ilike(w_term),
+                        Application.extracted_cv_text.ilike(w_term)
+                    )
                 )
-            )
+            stmt = stmt.where(and_(*search_conditions))
 
         result = await session.execute(stmt)
         return list(result.scalars().all())

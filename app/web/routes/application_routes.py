@@ -51,7 +51,7 @@ ALL_STATUSES = [
 async def list_applications(
     request: Request,
     status: Optional[str] = None,
-    vacancy_id: Optional[int] = None,
+    vacancy_id: Optional[str] = None,
     department: Optional[str] = None,
     q: Optional[str] = None,
     fit: Optional[str] = None,
@@ -62,10 +62,12 @@ async def list_applications(
 ):
     from_utc, to_utc, date_error = parse_date_range_to_utc(from_date, to_date)
 
+    parsed_vacancy_id = int(vacancy_id.strip()) if vacancy_id and vacancy_id.strip().isdigit() else None
+
     applications = await application_service.get_applications(
         session=session,
         status=status,
-        vacancy_id=vacancy_id,
+        vacancy_id=parsed_vacancy_id,
         department=department,
         search=q,
         from_date=from_utc,
@@ -99,7 +101,7 @@ async def list_applications(
             "vacancies": vacancies,
             "departments": departments,
             "current_status": status or "",
-            "current_vacancy": vacancy_id,
+            "current_vacancy": parsed_vacancy_id,
             "current_dept": department or "",
             "current_fit": fit or "all",
             "search_query": q or "",
@@ -114,7 +116,7 @@ async def list_applications(
 @router.get("/export/csv")
 async def export_applications_csv(
     status: Optional[str] = None,
-    vacancy_id: Optional[int] = None,
+    vacancy_id: Optional[str] = None,
     department: Optional[str] = None,
     q: Optional[str] = None,
     fit: Optional[str] = None,
@@ -124,10 +126,11 @@ async def export_applications_csv(
     session: AsyncSession = Depends(get_db)
 ):
     from_utc, to_utc, _ = parse_date_range_to_utc(from_date, to_date)
+    parsed_vacancy_id = int(vacancy_id.strip()) if vacancy_id and vacancy_id.strip().isdigit() else None
     applications = await application_service.get_applications(
         session=session,
         status=status,
-        vacancy_id=vacancy_id,
+        vacancy_id=parsed_vacancy_id,
         department=department,
         search=q,
         from_date=from_utc,

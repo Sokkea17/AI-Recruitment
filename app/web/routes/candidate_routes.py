@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select, desc, or_
+from sqlalchemy import select, desc, or_, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -53,15 +53,19 @@ async def list_candidates(
         stmt = stmt.where(Candidate.created_at <= to_utc)
 
     if q and q.strip():
-        term = f"%{q.strip()}%"
-        stmt = stmt.where(
-            or_(
-                Candidate.full_name.ilike(term),
-                Candidate.email.ilike(term),
-                Candidate.phone.ilike(term),
-                Candidate.telegram_username.ilike(term)
+        words = [w for w in q.strip().split() if w]
+        cand_conditions = []
+        for word in words:
+            w_term = f"%{word}%"
+            cand_conditions.append(
+                or_(
+                    Candidate.full_name.ilike(w_term),
+                    Candidate.email.ilike(w_term),
+                    Candidate.phone.ilike(w_term),
+                    Candidate.telegram_username.ilike(w_term)
+                )
             )
-        )
+        stmt = stmt.where(and_(*cand_conditions))
 
     result = await session.execute(stmt)
     candidates = list(result.scalars().all())

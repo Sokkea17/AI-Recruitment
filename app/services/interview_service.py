@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, date
 from typing import Optional, List, Tuple
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, or_, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -308,17 +308,23 @@ class InterviewService:
         if to_date and to_date.strip():
             stmt = stmt.where(Interview.interview_date <= to_date.strip())
         if search and search.strip():
-            term = f"%{search.strip()}%"
-            stmt = stmt.where(
-                or_(
-                    Candidate.full_name.ilike(term),
-                    Candidate.email.ilike(term),
-                    Candidate.phone.ilike(term),
-                    Vacancy.title.ilike(term),
-                    Interview.interview_location.ilike(term),
-                    Interview.interviewer_name.ilike(term)
+            from sqlalchemy import and_
+            words = [w for w in search.strip().split() if w]
+            intv_conditions = []
+            for word in words:
+                w_term = f"%{word}%"
+                intv_conditions.append(
+                    or_(
+                        Candidate.full_name.ilike(w_term),
+                        Candidate.email.ilike(w_term),
+                        Candidate.phone.ilike(w_term),
+                        Candidate.telegram_username.ilike(w_term),
+                        Vacancy.title.ilike(w_term),
+                        Interview.interview_location.ilike(w_term),
+                        Interview.interviewer_name.ilike(w_term)
+                    )
                 )
-            )
+            stmt = stmt.where(and_(*intv_conditions))
 
         res = await session.execute(stmt)
         return list(res.scalars().all())

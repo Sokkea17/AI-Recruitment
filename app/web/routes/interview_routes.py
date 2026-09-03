@@ -37,7 +37,7 @@ ALL_INTERVIEW_STATUSES = [
 async def list_interviews(
     request: Request,
     q: Optional[str] = None,
-    vacancy_id: Optional[int] = None,
+    vacancy_id: Optional[str] = None,
     status: Optional[str] = None,
     interview_type: Optional[str] = None,
     from_date: Optional[str] = None,
@@ -55,10 +55,12 @@ async def list_interviews(
         except Exception as e:
             date_error = f"Invalid date format: {str(e)}"
 
+    parsed_vacancy_id = int(vacancy_id.strip()) if vacancy_id and vacancy_id.strip().isdigit() else None
+
     interviews = await interview_service.get_all_interviews(
         session=session,
         search=q,
-        vacancy_id=vacancy_id,
+        vacancy_id=parsed_vacancy_id,
         status=status,
         interview_type=interview_type,
         from_date=from_date if not date_error else None,
@@ -77,7 +79,7 @@ async def list_interviews(
             "vacancies": vacancies,
             "all_statuses": ALL_INTERVIEW_STATUSES,
             "search_query": q or "",
-            "current_vacancy": vacancy_id,
+            "current_vacancy": parsed_vacancy_id,
             "current_status": status or "",
             "current_type": interview_type or "",
             "from_date": from_date or "",

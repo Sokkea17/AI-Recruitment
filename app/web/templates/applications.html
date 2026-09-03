@@ -32,7 +32,7 @@
         <select name="vacancy_id" class="form-control">
           <option value="">All Positions</option>
           {% for v in vacancies %}
-            <option value="{{ v.id }}" {% if current_vacancy == v.id %}selected{% endif %}>{{ v.title }}</option>
+            <option value="{{ v.id }}" {% if current_vacancy|string == v.id|string %}selected{% endif %}>{{ v.title }}</option>
           {% endfor %}
         </select>
       </div>
