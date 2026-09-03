@@ -9,7 +9,28 @@
 <a href="/applications" class="btn btn-secondary btn-sm">
   <span>&larr; Back to Applications</span>
 </a>
-<a href="/applications/{{ application.id }}/cv" class="btn btn-primary btn-sm" target="_blank">
+
+{% if active_interview and active_interview.status in ["Scheduled", "Confirmed", "Reschedule Requested"] %}
+<button type="button" class="btn btn-secondary btn-sm" id="btnOpenEditInterviewTop">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+  </svg>
+  <span>Edit Interview</span>
+</button>
+{% else %}
+<button type="button" class="btn btn-primary btn-sm" id="btnOpenScheduleInterviewTop">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+    <line x1="16" y1="2" x2="16" y2="6"></line>
+    <line x1="8" y1="2" x2="8" y2="6"></line>
+    <line x1="3" y1="10" x2="21" y2="10"></line>
+  </svg>
+  <span>Schedule Interview</span>
+</button>
+{% endif %}
+
+<a href="/applications/{{ application.id }}/cv" class="btn btn-secondary btn-sm" target="_blank">
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
     <polyline points="7 10 12 15 17 10"></polyline>
@@ -23,7 +44,7 @@
 <!-- Two-Column Candidate Review Cockpit -->
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start;">
 
-  <!-- LEFT COLUMN: Candidate Profile, History & HR Actions -->
+  <!-- LEFT COLUMN: Candidate Profile, Interview Workflow & HR Actions -->
   <div style="display: flex; flex-direction: column; gap: 20px;">
     
     <!-- Candidate Information Card -->
@@ -44,29 +65,26 @@
       <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
           <div>
-            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); display: block; margin-bottom: 3px;">Phone</span>
-            <span style="font-size: 13.5px; font-weight: 500; color: var(--text-primary);">{{ application.candidate.phone or 'Not provided' }}</span>
+            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); display: block; margin-bottom: 2px;">Phone Number</span>
+            <span style="font-size: 13.5px; font-weight: 600; color: var(--text-primary);">{{ application.candidate.phone or 'Not provided' }}</span>
           </div>
           <div>
-            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); display: block; margin-bottom: 3px;">Email</span>
-            <span style="font-size: 13.5px; font-weight: 500; color: var(--text-primary);">{{ application.candidate.email or 'Not provided' }}</span>
+            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); display: block; margin-bottom: 2px;">Email Address</span>
+            <span style="font-size: 13.5px; font-weight: 600; color: var(--text-primary);">{{ application.candidate.email or 'Not provided' }}</span>
           </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
           <div>
-            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); display: block; margin-bottom: 3px;">Telegram</span>
-            <span style="font-size: 13.5px; font-weight: 500; color: #818cf8;">
+            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); display: block; margin-bottom: 2px;">Telegram Account</span>
+            <span style="font-size: 13.5px; font-weight: 600; color: var(--text-primary);">
               {% if application.candidate.telegram_username %}
-                <a href="https://t.me/{{ application.candidate.telegram_username }}" target="_blank" style="color: #818cf8; text-decoration: none;">@{{ application.candidate.telegram_username }}</a>
+                @{{ application.candidate.telegram_username }}
               {% else %}
                 ID: {{ application.candidate.telegram_user_id }}
               {% endif %}
             </span>
           </div>
           <div>
-            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); display: block; margin-bottom: 3px;">Applied Role</span>
-            <span style="font-size: 13.5px; font-weight: 600; color: var(--text-primary);">{{ application.vacancy.title if application.vacancy else 'General' }}</span>
+            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); display: block; margin-bottom: 2px;">Target Position</span>
+            <span style="font-size: 13.5px; font-weight: 600; color: var(--primary);">{{ application.vacancy.title if application.vacancy else 'Position' }}</span>
           </div>
         </div>
 
@@ -89,6 +107,154 @@
       </div>
     </div>
 
+    <!-- Interview Management Card -->
+    <div class="section-panel" style="margin-bottom: 0;">
+      <div class="section-panel-header">
+        <div>
+          <h3 style="font-size: 14.5px; font-weight: 700; color: var(--text-primary);">Interview Management</h3>
+          <p style="font-size: 12px; color: var(--text-secondary);">Direct Telegram scheduling, confirmations & candidate status</p>
+        </div>
+        {% if active_interview %}
+          <span class="status-pill {{ get_badge_class(active_interview.status) }}">{{ active_interview.status }}</span>
+        {% endif %}
+      </div>
+
+      <div style="padding: 20px;">
+        {% if active_interview and active_interview.status != "Cancelled" %}
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <!-- Active Interview Details Grid -->
+            <div style="background: var(--bg-surface-subtle); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+              <div>
+                <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); display: block; margin-bottom: 2px;">Interview Date & Time</span>
+                <span style="font-size: 14px; font-weight: 700; color: var(--text-primary);">
+                  📅 {{ active_interview.interview_date }} at {{ active_interview.interview_time }}
+                </span>
+                <span style="font-size: 11px; color: var(--text-secondary); display: block;">Cambodia Time (ICT / UTC+7)</span>
+              </div>
+              <div>
+                <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); display: block; margin-bottom: 2px;">Type & Interviewer</span>
+                <span style="font-size: 13.5px; font-weight: 600; color: var(--text-primary);">
+                  {{ active_interview.interview_type }} &bull; {{ active_interview.interviewer_name or 'HR Team' }}
+                </span>
+              </div>
+              <div style="grid-column: 1 / -1;">
+                <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); display: block; margin-bottom: 2px;">Interview Location / Link</span>
+                <span style="font-size: 13.5px; font-weight: 600; color: var(--text-primary);">
+                  📍 {{ active_interview.interview_location }}
+                </span>
+                {% if active_interview.meeting_link %}
+                  <div style="margin-top: 4px;">
+                    <a href="{{ active_interview.meeting_link }}" target="_blank" style="color: var(--primary); font-size: 12.5px; text-decoration: underline;">
+                      🔗 Open Meeting Link
+                    </a>
+                  </div>
+                {% endif %}
+              </div>
+              {% if active_interview.notes %}
+                <div style="grid-column: 1 / -1;">
+                  <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); display: block; margin-bottom: 2px;">Interview Notes</span>
+                  <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.4;">{{ active_interview.notes }}</p>
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Telegram Delivery State Indicator -->
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; padding: 6px 4px;">
+              {% if active_interview.invitation_sent %}
+                <span style="color: var(--success); font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                  <span>✓</span> <span>Invitation delivered to candidate's Telegram</span>
+                </span>
+              {% else %}
+                <span style="color: var(--warning); font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                  <span>⚠️</span> <span>{{ active_interview.invitation_error or 'Invitation not yet delivered' }}</span>
+                </span>
+                <form method="POST" action="/applications/{{ application.id }}/interview/{{ active_interview.id }}/retry" style="display: inline;">
+                  <button type="submit" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 11px;">Retry Telegram</button>
+                </form>
+              {% endif %}
+            </div>
+
+            <!-- Action Buttons for Active Interview -->
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 6px; border-top: 1px solid var(--border-subtle);">
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-secondary btn-sm" id="btnEditInterviewCard">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                  <span>Edit / Reschedule</span>
+                </button>
+                
+                {% if active_interview.status != "Completed" %}
+                <form method="POST" action="/applications/{{ application.id }}/interview/{{ active_interview.id }}/complete" style="display: inline;">
+                  <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--success);">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>Mark Completed</span>
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+
+              <button type="button" class="btn btn-secondary btn-sm" style="color: var(--danger);" id="btnCancelInterviewCard" data-interview-id="{{ active_interview.id }}">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                <span>Cancel Interview</span>
+              </button>
+            </div>
+          </div>
+        {% else %}
+          <!-- Empty State: No active interview scheduled -->
+          <div style="text-align: center; padding: 24px 12px;">
+            <div style="font-size: 28px; margin-bottom: 8px;">📅</div>
+            <h4 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">No Interview Scheduled</h4>
+            <p style="font-size: 12.5px; color: var(--text-secondary); max-width: 320px; margin: 0 auto 16px;">
+              Schedule an in-person, online, or phone interview and send an interactive invitation directly to the candidate's Telegram account.
+            </p>
+            <button type="button" class="btn btn-primary btn-sm" id="btnOpenScheduleModalBody">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <span>Schedule Interview</span>
+            </button>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Interview History (Past Rounds) -->
+    {% if history_interviews %}
+      <div class="section-panel" style="margin-bottom: 0;">
+        <div class="section-panel-header">
+          <div>
+            <h3 style="font-size: 14px; font-weight: 700; color: var(--text-primary);">Interview History</h3>
+            <p style="font-size: 12px; color: var(--text-secondary);">Previous interview rounds and status logs</p>
+          </div>
+        </div>
+        <div style="padding: 12px 20px; display: flex; flex-direction: column; gap: 8px;">
+          {% for h in history_interviews %}
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-subtle);">
+              <div>
+                <span style="font-size: 13px; font-weight: 600; color: var(--text-primary); display: block;">
+                  📅 {{ h.interview_date }} &bull; {{ h.interview_time }}
+                </span>
+                <span style="font-size: 11.5px; color: var(--text-tertiary);">
+                  {{ h.interview_type }} &bull; 📍 {{ h.interview_location }}
+                </span>
+              </div>
+              <span class="status-pill {{ get_badge_class(h.status) }}">{{ h.status }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
     <!-- Application Status & HR Notes Form -->
     <div class="section-panel" style="margin-bottom: 0;">
       <div class="section-panel-header">
@@ -101,8 +267,8 @@
       <form method="POST" action="/applications/{{ application.id }}/status" style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
         <div>
           <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Application Stage</label>
-          <select name="status" class="form-control">
-            {% for st in ["New", "Under Review", "Shortlisted", "Interview", "Selected", "Rejected", "Withdrawn"] %}
+          <select name="status" class="form-control" id="applicationStageSelect">
+            {% for st in all_statuses %}
               <option value="{{ st }}" {% if application.status == st %}selected{% endif %}>{{ st }}</option>
             {% endfor %}
           </select>
@@ -110,7 +276,7 @@
 
         <div>
           <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Internal HR Notes</label>
-          <textarea name="hr_notes" rows="4" class="form-control" placeholder="Add screening evaluation, interview impressions, or salary expectations...">{{ application.hr_notes or '' }}</textarea>
+          <textarea name="hr_notes" rows="3" class="form-control" placeholder="Add screening evaluation, interview impressions, or salary expectations...">{{ application.hr_notes or '' }}</textarea>
         </div>
 
         <div style="display: flex; justify-content: flex-end;">
@@ -234,4 +400,239 @@
   </div>
 
 </div>
+
+<!-- Schedule / Edit Interview Modal -->
+<div class="modal-overlay" id="interviewModalOverlay">
+  <div class="modal-card" style="max-width: 520px; width: 92%;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-subtle);">
+      <div>
+        <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary);" id="interviewModalTitle">Schedule Interview</h3>
+        <p style="font-size: 12px; color: var(--text-secondary);" id="interviewModalSubtitle">Candidate: {{ application.candidate.full_name }} &bull; {{ application.vacancy.title if application.vacancy else 'Position' }}</p>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" id="closeInterviewModalBtn" style="padding: 4px 8px;">✕</button>
+    </div>
+
+    <!-- Step 1: Input Form -->
+    <form id="interviewForm" method="POST" action="/applications/{{ application.id }}/interview/schedule">
+      <input type="hidden" name="interview_id" id="modalInterviewId" value="{{ active_interview.id if active_interview else '' }}">
+      
+      <div id="interviewFormStep1" style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Interview Date *</label>
+            <input type="date" name="interview_date" id="intvDateInput" class="form-control" required value="{{ active_interview.interview_date if active_interview else '' }}">
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Interview Time * (Cambodia Time)</label>
+            <input type="text" name="interview_time" id="intvTimeInput" class="form-control" placeholder="e.g. 10:00 AM" required value="{{ active_interview.interview_time if active_interview else '10:00 AM' }}">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Interview Type</label>
+            <select name="interview_type" id="intvTypeSelect" class="form-control">
+              <option value="In-person" {% if active_interview and active_interview.interview_type == 'In-person' %}selected{% endif %}>In-person</option>
+              <option value="Online" {% if active_interview and active_interview.interview_type == 'Online' %}selected{% endif %}>Online (Google Meet / Zoom)</option>
+              <option value="Phone" {% if active_interview and active_interview.interview_type == 'Phone' %}selected{% endif %}>Phone</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Interviewer Name</label>
+            <input type="text" name="interviewer_name" id="intvInterviewerInput" class="form-control" placeholder="e.g. HR Manager" value="{{ active_interview.interviewer_name if active_interview else 'HR Manager' }}">
+          </div>
+        </div>
+
+        <div>
+          <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Interview Location / Link *</label>
+          <input type="text" name="interview_location" id="intvLocationInput" class="form-control" placeholder="e.g. ADC Office, Phnom Penh" required value="{{ active_interview.interview_location if active_interview else 'ADC Office, Phnom Penh' }}">
+        </div>
+
+        <div id="meetingLinkGroup" style="display: none;">
+          <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Meeting Link (Optional)</label>
+          <input type="url" name="meeting_link" id="intvMeetingLinkInput" class="form-control" placeholder="https://meet.google.com/..." value="{{ active_interview.meeting_link if active_interview and active_interview.meeting_link else '' }}">
+        </div>
+
+        <div>
+          <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Interview Notes / Instructions</label>
+          <textarea name="notes" id="intvNotesInput" rows="2" class="form-control" placeholder="e.g. Please bring your original certificates...">{{ active_interview.notes if active_interview and active_interview.notes else 'Please bring your original documents.' }}</textarea>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+          <input type="checkbox" name="send_invitation" id="intvSendCheckbox" checked value="true" style="accent-color: var(--primary);">
+          <label for="intvSendCheckbox" style="font-size: 12.5px; color: var(--text-secondary); cursor: pointer;">
+            Send invitation to candidate's Telegram account immediately
+          </label>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px;">
+          <button type="button" class="btn btn-secondary" id="btnCancelModalStep1">Cancel</button>
+          <button type="button" class="btn btn-primary" id="btnNextToConfirm">Review Details &rarr;</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Confirmation Preview (Prompt Section 7 Requirement) -->
+      <div id="interviewFormStep2" style="display: none; flex-direction: column; gap: 14px;">
+        <div style="background: var(--bg-surface-subtle); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px; font-size: 13px;">
+          <p style="font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">Please review interview invitation details:</p>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div><span style="color: var(--text-tertiary);">Candidate:</span> <strong style="color: var(--text-primary);">{{ application.candidate.full_name }}</strong></div>
+            <div><span style="color: var(--text-tertiary);">Position:</span> <strong style="color: var(--text-primary);">{{ application.vacancy.title if application.vacancy else 'Position' }}</strong></div>
+            <div><span style="color: var(--text-tertiary);">Date & Time:</span> <strong id="previewDateTime" style="color: var(--text-primary);"></strong> <span style="font-size: 11px; color: var(--text-tertiary);">(Cambodia Time)</span></div>
+            <div><span style="color: var(--text-tertiary);">Type:</span> <strong id="previewType" style="color: var(--text-primary);"></strong></div>
+            <div><span style="color: var(--text-tertiary);">Location:</span> <strong id="previewLocation" style="color: var(--text-primary);"></strong></div>
+            <div id="previewInterviewerRow"><span style="color: var(--text-tertiary);">Interviewer:</span> <strong id="previewInterviewer" style="color: var(--text-primary);"></strong></div>
+          </div>
+        </div>
+
+        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">
+          The candidate will receive an interactive Telegram notification with <strong>Confirm</strong>, <strong>Request Reschedule</strong>, and <strong>Decline</strong> options.
+        </div>
+
+        <div style="display: flex; justify-content: space-between; gap: 10px; margin-top: 6px;">
+          <button type="button" class="btn btn-secondary" id="btnBackToStep1">&larr; Back</button>
+          <button type="submit" class="btn btn-primary" id="btnConfirmAndSend">Confirm & Send Invitation</button>
+        </div>
+      </div>
+
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const modalOverlay = document.getElementById("interviewModalOverlay");
+  const modalTitle = document.getElementById("interviewModalTitle");
+  const form = document.getElementById("interviewForm");
+  const step1 = document.getElementById("interviewFormStep1");
+  const step2 = document.getElementById("interviewFormStep2");
+  
+  const intvDate = document.getElementById("intvDateInput");
+  const intvTime = document.getElementById("intvTimeInput");
+  const intvType = document.getElementById("intvTypeSelect");
+  const intvLoc = document.getElementById("intvLocationInput");
+  const intvInterviewer = document.getElementById("intvInterviewerInput");
+  const meetingGroup = document.getElementById("meetingLinkGroup");
+
+  // Prevent past dates in datepicker
+  if (intvDate) {
+    const today = new Date().toISOString().split("T")[0];
+    intvDate.setAttribute("min", today);
+    if (!intvDate.value) {
+      // Default to tomorrow
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      intvDate.value = tomorrow.toISOString().split("T")[0];
+    }
+  }
+
+  // Toggle meeting link on type change
+  if (intvType) {
+    intvType.addEventListener("change", () => {
+      if (intvType.value === "Online") {
+        meetingGroup.style.display = "block";
+        if (intvLoc.value === "ADC Office, Phnom Penh") {
+          intvLoc.value = "Google Meet / Zoom";
+        }
+      } else {
+        meetingGroup.style.display = "none";
+        if (intvLoc.value === "Google Meet / Zoom") {
+          intvLoc.value = "ADC Office, Phnom Penh";
+        }
+      }
+    });
+  }
+
+  function openScheduleModal(isEdit = false) {
+    modalOverlay.classList.add("active");
+    step1.style.display = "flex";
+    step2.style.display = "none";
+    if (isEdit) {
+      modalTitle.innerText = "Edit / Reschedule Interview";
+      const intvId = document.getElementById("modalInterviewId").value;
+      form.action = `/applications/{{ application.id }}/interview/${intvId}/edit`;
+      document.getElementById("btnConfirmAndSend").innerText = "Save & Send Update";
+    } else {
+      modalTitle.innerText = "Schedule Interview";
+      form.action = `/applications/{{ application.id }}/interview/schedule`;
+      document.getElementById("btnConfirmAndSend").innerText = "Confirm & Send Invitation";
+    }
+  }
+
+  function closeModal() {
+    modalOverlay.classList.remove("active");
+  }
+
+  const btnOpenTop = document.getElementById("btnOpenScheduleInterviewTop");
+  if (btnOpenTop) btnOpenTop.addEventListener("click", () => openScheduleModal(false));
+
+  const btnEditTop = document.getElementById("btnOpenEditInterviewTop");
+  if (btnEditTop) btnEditTop.addEventListener("click", () => openScheduleModal(true));
+
+  const btnOpenCard = document.getElementById("btnOpenScheduleModalBody");
+  if (btnOpenCard) btnOpenCard.addEventListener("click", () => openScheduleModal(false));
+
+  const btnEditCard = document.getElementById("btnEditInterviewCard");
+  if (btnEditCard) btnEditCard.addEventListener("click", () => openScheduleModal(true));
+
+  const btnClose = document.getElementById("closeInterviewModalBtn");
+  if (btnClose) btnClose.addEventListener("click", closeModal);
+
+  const btnCancel1 = document.getElementById("btnCancelModalStep1");
+  if (btnCancel1) btnCancel1.addEventListener("click", closeModal);
+
+  // Review step
+  const btnNext = document.getElementById("btnNextToConfirm");
+  if (btnNext) {
+    btnNext.addEventListener("click", () => {
+      if (!intvDate.value || !intvTime.value || !intvLoc.value) {
+        showToast("Please fill in the interview date, time, and location", "error");
+        return;
+      }
+      document.getElementById("previewDateTime").innerText = `${intvDate.value}, ${intvTime.value}`;
+      document.getElementById("previewType").innerText = intvType.value;
+      document.getElementById("previewLocation").innerText = intvLoc.value;
+      document.getElementById("previewInterviewer").innerText = intvInterviewer.value || "HR Team";
+      
+      step1.style.display = "none";
+      step2.style.display = "flex";
+    });
+  }
+
+  const btnBack = document.getElementById("btnBackToStep1");
+  if (btnBack) {
+    btnBack.addEventListener("click", () => {
+      step2.style.display = "none";
+      step1.style.display = "flex";
+    });
+  }
+
+  // Cancel Interview confirmation dialog
+  const btnCancelIntv = document.getElementById("btnCancelInterviewCard");
+  if (btnCancelIntv) {
+    btnCancelIntv.addEventListener("click", () => {
+      const intvId = btnCancelIntv.dataset.interviewId;
+      openConfirmModal(
+        "Cancel Interview",
+        "Are you sure you want to cancel this scheduled interview? A cancellation notice will be sent to the candidate's Telegram account.",
+        "Yes, Cancel Interview",
+        async () => {
+          const resp = await fetch(`/applications/{{ application.id }}/interview/${intvId}/cancel`, {
+            method: "POST",
+            headers: { "Accept": "application/json", "X-Requested-With": "XMLHttpRequest" }
+          });
+          if (resp.ok) {
+            showToast("Interview has been cancelled", "info");
+            setTimeout(() => window.location.reload(), 500);
+          } else {
+            showToast("Failed to cancel interview", "error");
+          }
+        }
+      );
+    });
+  }
+});
+</script>
 {% endblock %}

@@ -200,7 +200,11 @@ class ApplicationService:
     ) -> List[Application]:
         stmt = (
             select(Application)
-            .options(selectinload(Application.candidate), selectinload(Application.vacancy))
+            .options(
+                selectinload(Application.candidate),
+                selectinload(Application.vacancy),
+                selectinload(Application.interviews)
+            )
             .order_by(desc(Application.submitted_at))
         )
         if status and status != "all":
@@ -227,7 +231,11 @@ class ApplicationService:
         stmt = (
             select(Application)
             .where(Application.id == application_id)
-            .options(selectinload(Application.candidate), selectinload(Application.vacancy))
+            .options(
+                selectinload(Application.candidate),
+                selectinload(Application.vacancy),
+                selectinload(Application.interviews)
+            )
         )
         result = await session.execute(stmt)
         return result.scalar_one_or_none()

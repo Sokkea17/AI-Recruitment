@@ -1,31 +1,34 @@
 import os
-import io
 import csv
-from datetime import datetime
+import io
 from typing import Optional
-from fastapi import APIRouter, Request, Depends, Form, HTTPException, status
-from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse, Response, JSONResponse
+from datetime import datetime
+from fastapi import APIRouter, Request, Depends, HTTPException, Form, Response
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.config import settings
 from app.database.session import get_db
-from app.models.user import User
 from app.models.application import Application
+from app.models.user import User
 from app.models.audit_log import AuditLog
 from app.web.auth import get_current_user_required
 from app.services.application_service import application_service
 from app.services.vacancy_service import vacancy_service
 from app.services.ai_service import ai_service
+from app.services.interview_service import interview_service
+from app.services.interview_notification_service import interview_notification_service
 from app.utils.formatters import (
     get_status_badge_class,
     get_candidate_initials,
     calculate_preliminary_fit,
     parse_structured_ai_summary,
     format_date_only,
-    format_datetime
+    format_datetime,
+    to_cambodia_time
 )
 
 router = APIRouter(prefix="/applications")
@@ -35,6 +38,13 @@ templates.env.globals["get_initials"] = get_candidate_initials
 templates.env.globals["get_fit"] = calculate_preliminary_fit
 templates.env.globals["format_date"] = format_date_only
 templates.env.globals["format_datetime"] = format_datetime
+
+ALL_STATUSES = [
+    "New", "Under Review", "Shortlisted",
+    "Interview Scheduled", "Interview Confirmed", "Interview Completed",
+    "Reschedule Requested", "Interview Declined",
+    "Selected", "Rejected", "Withdrawn"
+]
 
 @router.get("", response_class=HTMLResponse)
 async def list_applications(
@@ -81,6 +91,7 @@ async def list_applications(
             "current_vacancy": vacancy_id,
             "current_fit": fit,
             "search_query": q,
+            "all_statuses": ALL_STATUSES,
             "active_nav": "applications"
         }
     )
@@ -104,13 +115,14 @@ async def export_applications_csv(
     writer = csv.writer(output)
     writer.writerow([
         "Application ID", "Candidate Name", "Phone", "Email", "Telegram Username",
-        "Position", "Department", "Submission Date", "AI Fit Score", "Status", "CV Filename", "HR Notes"
+        "Position", "Department", "Submission Date (Cambodia)", "AI Fit Score", "Status", "CV Filename", "HR Notes"
     ])
 
     for app in applications:
         cand = app.candidate
         vac = app.vacancy
         fit = calculate_preliminary_fit(app)
+        c_submitted = to_cambodia_time(app.submitted_at).strftime("%Y-%m-%d %H:%M:%S") if app.submitted_at else ""
         writer.writerow([
             app.application_code,
             cand.full_name if cand else "",
@@ -119,7 +131,7 @@ async def export_applications_csv(
             cand.telegram_username if cand else "",
             vac.title if vac else "",
             vac.department if vac else "",
-            app.submitted_at.strftime("%Y-%m-%d %H:%M:%S"),
+            c_submitted,
             f"{fit['score']}% ({fit['label']})",
             app.status,
             app.cv_original_filename,
@@ -156,6 +168,12 @@ async def view_application_detail(
     structured_ai = parse_structured_ai_summary(application)
     fit = calculate_preliminary_fit(application)
 
+    # Interviews
+    all_interviews = await interview_service.get_interviews_for_application(session, id)
+    active_interview = await interview_service.get_active_interview(session, id)
+    # Past interviews (excluding active)
+    history_interviews = [i for i in all_interviews if active_interview and i.id != active_interview.id]
+
     return templates.TemplateResponse(
         request=request,
         name="application_detail.html",
@@ -166,9 +184,165 @@ async def view_application_detail(
             "other_applications": other_applications,
             "structured_ai": structured_ai,
             "fit": fit,
+            "active_interview": active_interview,
+            "history_interviews": history_interviews,
+            "all_statuses": ALL_STATUSES,
             "active_nav": "applications"
         }
     )
+
+@router.post("/{id}/interview/schedule")
+async def schedule_interview_post(
+    id: int,
+    request: Request,
+    interview_date: str = Form(...),
+    interview_time: str = Form(...),
+    interview_type: str = Form("In-person"),
+    interview_location: str = Form(...),
+    meeting_link: Optional[str] = Form(None),
+    interviewer_name: Optional[str] = Form(None),
+    notes: Optional[str] = Form(None),
+    send_invitation: bool = Form(True),
+    current_user: User = Depends(get_current_user_required),
+    session: AsyncSession = Depends(get_db)
+):
+    interview, error_msg = await interview_service.schedule_interview(
+        session=session,
+        application_id=id,
+        interview_date=interview_date,
+        interview_time=interview_time,
+        interview_type=interview_type,
+        interview_location=interview_location,
+        meeting_link=meeting_link,
+        interviewer_name=interviewer_name,
+        notes=notes,
+        user_id=current_user.id,
+        send_invitation=send_invitation
+    )
+
+    if not interview:
+        raise HTTPException(status_code=400, detail=error_msg or "Failed to schedule interview.")
+
+    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest" or request.headers.get("accept", "").startswith("application/json")
+    if is_ajax:
+        return JSONResponse({
+            "success": True,
+            "interview_id": interview.id,
+            "invitation_sent": interview.invitation_sent,
+            "error": error_msg
+        })
+
+    return RedirectResponse(url=f"/applications/{id}?scheduled=true", status_code=303)
+
+@router.post("/{id}/interview/{interview_id}/edit")
+async def edit_interview_post(
+    id: int,
+    interview_id: int,
+    request: Request,
+    interview_date: str = Form(...),
+    interview_time: str = Form(...),
+    interview_type: str = Form("In-person"),
+    interview_location: str = Form(...),
+    meeting_link: Optional[str] = Form(None),
+    interviewer_name: Optional[str] = Form(None),
+    notes: Optional[str] = Form(None),
+    send_update: bool = Form(True),
+    current_user: User = Depends(get_current_user_required),
+    session: AsyncSession = Depends(get_db)
+):
+    interview, error_msg = await interview_service.edit_interview(
+        session=session,
+        interview_id=interview_id,
+        interview_date=interview_date,
+        interview_time=interview_time,
+        interview_type=interview_type,
+        interview_location=interview_location,
+        meeting_link=meeting_link,
+        interviewer_name=interviewer_name,
+        notes=notes,
+        user_id=current_user.id,
+        send_update=send_update
+    )
+
+    if not interview:
+        raise HTTPException(status_code=400, detail=error_msg or "Failed to update interview.")
+
+    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest" or request.headers.get("accept", "").startswith("application/json")
+    if is_ajax:
+        return JSONResponse({"success": True, "interview_id": interview.id, "error": error_msg})
+
+    return RedirectResponse(url=f"/applications/{id}?updated=true", status_code=303)
+
+@router.post("/{id}/interview/{interview_id}/cancel")
+async def cancel_interview_post(
+    id: int,
+    interview_id: int,
+    request: Request,
+    send_cancellation: bool = Form(True),
+    current_user: User = Depends(get_current_user_required),
+    session: AsyncSession = Depends(get_db)
+):
+    interview, error_msg = await interview_service.cancel_interview(
+        session=session,
+        interview_id=interview_id,
+        user_id=current_user.id,
+        send_cancellation=send_cancellation
+    )
+
+    if not interview:
+        raise HTTPException(status_code=400, detail=error_msg or "Failed to cancel interview.")
+
+    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest" or request.headers.get("accept", "").startswith("application/json")
+    if is_ajax:
+        return JSONResponse({"success": True, "error": error_msg})
+
+    return RedirectResponse(url=f"/applications/{id}?cancelled=true", status_code=303)
+
+@router.post("/{id}/interview/{interview_id}/complete")
+async def complete_interview_post(
+    id: int,
+    interview_id: int,
+    request: Request,
+    current_user: User = Depends(get_current_user_required),
+    session: AsyncSession = Depends(get_db)
+):
+    interview, error_msg = await interview_service.mark_completed(
+        session=session,
+        interview_id=interview_id,
+        user_id=current_user.id
+    )
+
+    if not interview:
+        raise HTTPException(status_code=400, detail=error_msg or "Failed to mark interview as completed.")
+
+    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest" or request.headers.get("accept", "").startswith("application/json")
+    if is_ajax:
+        return JSONResponse({"success": True})
+
+    return RedirectResponse(url=f"/applications/{id}?completed=true", status_code=303)
+
+@router.post("/{id}/interview/{interview_id}/retry")
+async def retry_interview_invitation_post(
+    id: int,
+    interview_id: int,
+    request: Request,
+    current_user: User = Depends(get_current_user_required),
+    session: AsyncSession = Depends(get_db)
+):
+    interview = await interview_service.get_interview_by_id(session, interview_id)
+    if not interview:
+        raise HTTPException(status_code=404, detail="Interview not found.")
+
+    sent, err = await interview_notification_service.send_interview_invitation(interview, session)
+    interview.invitation_sent = sent
+    interview.invitation_error = err
+    await session.commit()
+
+    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest" or request.headers.get("accept", "").startswith("application/json")
+    if is_ajax:
+        return JSONResponse({"success": sent, "error": err})
+
+    return RedirectResponse(url=f"/applications/{id}", status_code=303)
 
 @router.post("/{id}/regenerate-ai")
 async def regenerate_ai_summary(
@@ -184,7 +358,6 @@ async def regenerate_ai_summary(
     vacancy = application.vacancy
     cv_text = application.extracted_cv_text or ""
 
-    # Re-run AI analysis
     analysis = await ai_service.analyze_application(
         cv_text=cv_text,
         vacancy_title=vacancy.title if vacancy else "Position",
@@ -196,7 +369,6 @@ async def regenerate_ai_summary(
     application.ai_matching_analysis = analysis["ai_matching_analysis"]
     application.updated_at = datetime.utcnow()
 
-    # Log audit
     audit = AuditLog(
         user_id=current_user.id,
         action="AI_SUMMARY_REGENERATED",
@@ -228,7 +400,6 @@ async def update_application_status_post(
     current_user: User = Depends(get_current_user_required),
     session: AsyncSession = Depends(get_db)
 ):
-    # Check if JSON or Form
     if request.headers.get("content-type", "").startswith("application/json"):
         data = await request.json()
         new_status = data.get("status")

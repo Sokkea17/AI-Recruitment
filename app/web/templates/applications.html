@@ -3,7 +3,7 @@
 {% block title %}Applications Pipeline - Recruitment Workspace{% endblock %}
 
 {% block page_greeting %}Candidate Applications{% endblock %}
-{% block page_subtext %}Review, filter, and manage candidate recruitment records.{% endblock %}
+{% block page_subtext %}Review, filter, schedule interviews, and manage candidate recruitment records.{% endblock %}
 
 {% block topbar_actions %}
 <a href="/applications/export/csv{% if current_status %}?status={{ current_status }}{% endif %}" class="btn btn-secondary btn-sm" title="Export as CSV">
@@ -35,18 +35,18 @@
       </select>
     </div>
 
-    <!-- Status Filter -->
-    <div style="width: 170px;">
+    <!-- Status Filter (including Interview stages) -->
+    <div style="width: 190px;">
       <select name="status" class="form-control">
-        <option value="">All Statuses</option>
-        {% for st in ["New", "Under Review", "Shortlisted", "Interview", "Selected", "Rejected", "Withdrawn"] %}
+        <option value="">All Statuses & Stages</option>
+        {% for st in all_statuses %}
           <option value="{{ st }}" {% if current_status == st %}selected{% endif %}>{{ st }}</option>
         {% endfor %}
       </select>
     </div>
 
     <!-- AI Fit Filter -->
-    <div style="width: 180px;">
+    <div style="width: 170px;">
       <select name="fit" class="form-control">
         <option value="all">All AI Fit Tiers</option>
         <option value="strong" {% if current_fit == 'strong' %}selected{% endif %}>Strong Fit (&ge; 80%)</option>
@@ -82,7 +82,8 @@
             <th>Candidate</th>
             <th>Position Applied</th>
             <th>AI Preliminary Fit</th>
-            <th>Status</th>
+            <th>Recruitment Stage</th>
+            <th>Interview Schedule</th>
             <th>Applied Date</th>
             <th style="text-align: right;">Action</th>
           </tr>
@@ -90,6 +91,7 @@
         <tbody>
           {% for app in applications %}
             {% set fit = get_fit(app) %}
+            {% set active_intv = app.interviews[0] if app.interviews and app.interviews[0].status != 'Cancelled' else None %}
             <tr>
               <td>
                 <div class="candidate-cell">
@@ -114,11 +116,25 @@
               </td>
               <td>
                 <!-- Quick Status Dropdown -->
-                <select class="form-control quick-status-select" data-app-id="{{ app.id }}" data-current="{{ app.status }}" style="padding: 4px 24px 4px 8px; font-size: 12px; width: 130px; height: 28px;">
-                  {% for st in ["New", "Under Review", "Shortlisted", "Interview", "Selected", "Rejected", "Withdrawn"] %}
+                <select class="form-control quick-status-select" data-app-id="{{ app.id }}" data-current="{{ app.status }}" style="padding: 4px 24px 4px 8px; font-size: 12px; width: 140px; height: 28px;">
+                  {% for st in all_statuses %}
                     <option value="{{ st }}" {% if app.status == st %}selected{% endif %}>{{ st }}</option>
                   {% endfor %}
                 </select>
+              </td>
+              <td>
+                {% if active_intv %}
+                  <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-size: 12px; font-weight: 600; color: var(--text-primary);">
+                      📅 {{ active_intv.interview_date }}
+                    </span>
+                    <span style="font-size: 11px; color: var(--text-tertiary);">
+                      {{ active_intv.interview_time }} &bull; <span class="status-pill {{ get_badge_class(active_intv.status) }}" style="font-size: 9.5px; padding: 1px 5px;">{{ active_intv.status }}</span>
+                    </span>
+                  </div>
+                {% else %}
+                  <span style="color: var(--text-tertiary); font-size: 12px;">—</span>
+                {% endif %}
               </td>
               <td>
                 <span style="color: var(--text-secondary); font-size: 12.5px;">{{ format_date(app.submitted_at) }}</span>

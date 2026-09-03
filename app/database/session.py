@@ -30,7 +30,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 async def init_db():
     # Import all models to ensure they are registered with Base.metadata
-    from app.models import Vacancy, JDFile, Candidate, Application, User, AuditLog, SystemSetting
+    from app.models import Vacancy, JDFile, Candidate, Application, Interview, User, AuditLog, SystemSetting
     from app.utils.security import hash_password
 
     # Ensure storage paths exist

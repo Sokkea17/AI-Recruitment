@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, List, TYPE_CHECKING
 from sqlalchemy import String, Text, Integer, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.base import Base
@@ -7,6 +7,7 @@ from app.database.base import Base
 if TYPE_CHECKING:
     from app.models.candidate import Candidate
     from app.models.vacancy import Vacancy
+    from app.models.interview import Interview
 
 class Application(Base):
     __tablename__ = 'applications'
@@ -22,7 +23,7 @@ class Application(Base):
     cv_mime_type: Mapped[str] = mapped_column(String(100), default='application/pdf')
     extracted_cv_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     
-    # Status: New, Under Review, Shortlisted, Interview, Selected, Rejected, Withdrawn
+    # Status: New, Under Review, Shortlisted, Interview Scheduled, Interview Confirmed, Interview Completed, Reschedule Requested, Interview Declined, Interview, Selected, Rejected, Withdrawn
     status: Mapped[str] = mapped_column(String(32), default='New', index=True)
     
     hr_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -36,3 +37,4 @@ class Application(Base):
     # Relationships
     candidate: Mapped['Candidate'] = relationship('Candidate', back_populates='applications')
     vacancy: Mapped['Vacancy'] = relationship('Vacancy', back_populates='applications')
+    interviews: Mapped[List['Interview']] = relationship('Interview', back_populates='application', cascade='all, delete-orphan', order_by='desc(Interview.created_at)')
