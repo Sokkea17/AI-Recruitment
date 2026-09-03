@@ -1,7 +1,32 @@
-// Modern SaaS HR Dashboard Client Script
+// Modern SaaS HR Dashboard Client Script with Day / Night Mode
 
 document.addEventListener("DOMContentLoaded", () => {
-  // 1. Sidebar Collapse Management
+  // 1. Theme Management (Day Mode / Night Mode)
+  const themeToggleBtn = document.getElementById("themeToggleBtn");
+  const themeModeLabel = document.getElementById("themeModeLabel");
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
+    if (themeModeLabel) {
+      themeModeLabel.innerText = theme === "dark" ? "Night" : "Day";
+    }
+  }
+
+  // Sync button label with initial theme
+  const activeTheme = document.documentElement.getAttribute("data-theme") || localStorage.getItem("theme") || "dark";
+  applyTheme(activeTheme);
+
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme") || "dark";
+      const nextTheme = current === "dark" ? "light" : "dark";
+      applyTheme(nextTheme);
+      showToast(`Switched to ${nextTheme === "dark" ? "Night" : "Day"} mode`, "info");
+    });
+  }
+
+  // 2. Sidebar Collapse Management
   const sidebar = document.querySelector(".sidebar");
   const collapseBtn = document.querySelector(".sidebar-collapse-btn");
 
@@ -17,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 2. Global Modal Confirmation Logic
+  // 3. Global Modal Confirmation Logic
   window.openConfirmModal = function(title, message, confirmBtnText, onConfirm) {
     const overlay = document.getElementById("globalConfirmModal");
     if (!overlay) {
@@ -46,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
     overlay.classList.add("active");
   };
 
-  // 3. Toast Notifications
+  // 4. Toast Notifications
   window.showToast = function(message, type = "info") {
     const container = document.getElementById("toastContainer") || document.body;
     const toast = document.createElement("div");
@@ -60,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 3500);
   };
 
-  // 4. Quick Status Update Dropdowns
+  // 5. Quick Status Update Dropdowns
   document.querySelectorAll(".quick-status-select").forEach(select => {
     select.addEventListener("change", async (e) => {
       const appId = select.dataset.appId;
@@ -91,7 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // 5. Regenerate AI Summary on Application Detail Page
+  // 6. Regenerate AI Summary on Application Detail Page
   const regenBtn = document.getElementById("btnRegenerateAI");
   if (regenBtn) {
     regenBtn.addEventListener("click", async () => {
@@ -126,7 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 6. Interactive Timeline Tab Switching (7 Days vs 30 Days)
+  // 7. Interactive Timeline Tab Switching (7 Days vs 30 Days)
   const tab7d = document.getElementById("tabTimeline7d");
   const tab30d = document.getElementById("tabTimeline30d");
   const view7d = document.getElementById("viewTimeline7d");
