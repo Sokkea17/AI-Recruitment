@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HR Login - Recruitment Assistant</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body style="display: block;">
+  <div class="auth-container">
+    <div class="auth-card">
+      <div style="text-align: center; margin-bottom: 28px;">
+        <div class="brand-icon" style="margin: 0 auto 16px auto; width: 48px; height: 48px; font-size: 24px;">🤖</div>
+        <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 6px;">HR Administrator Login</h2>
+        <p style="font-size: 13.5px; color: var(--text-muted);">Access candidate applications and vacancy manager</p>
+      </div>
+
+      {% if error %}
+      <div style="background: var(--danger-bg); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; padding: 12px; border-radius: 8px; font-size: 13px; margin-bottom: 20px;">
+        {{ error }}
+      </div>
+      {% endif %}
+
+      <form action="/login" method="POST">
+        {% if next %}
+        <input type="hidden" name="next" value="{{ next }}">
+        {% endif %}
+        <div class="form-group">
+          <label class="form-label" for="username">Username</label>
+          <input class="form-control" type="text" id="username" name="username" required autofocus placeholder="admin" value="{{ username or '' }}">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 24px;">
+          <label class="form-label" for="password">Password</label>
+          <input class="form-control" type="password" id="password" name="password" required placeholder="••••••••">
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 14px;">
+          Sign In to Dashboard
+        </button>
+      </form>
+
+      <div style="margin-top: 24px; text-align: center; font-size: 12px; color: var(--text-dim);">
+        Default admin: <code>admin</code> / <code>admin123</code>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

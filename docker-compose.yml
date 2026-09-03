@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: telegram_recruitment_bot
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/recruitment_db
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - HR_TELEGRAM_CHAT_ID=${HR_TELEGRAM_CHAT_ID}
+      - SECRET_KEY=${SECRET_KEY}
+      - HR_DEFAULT_USERNAME=${HR_DEFAULT_USERNAME:-admin}
+      - HR_DEFAULT_PASSWORD=${HR_DEFAULT_PASSWORD:-admin123}
+      - STORAGE_PATH=/app/storage
+    volumes:
+      - storage_data:/app/storage
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15-alpine
+    container_name: recruitment_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: recruitment_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  storage_data:
+  pgdata:

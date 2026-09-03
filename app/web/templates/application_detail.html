@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Application {{ application.application_code }} - {{ application.candidate.full_name }}{% endblock %}
+{% block page_title %}Application Details: {{ application.application_code }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="/applications/{{ application.id }}/cv" class="btn btn-primary" target="_blank">
+  <span>📄 Download CV ({{ application.cv_original_filename }})</span>
+</a>
+<a href="/applications" class="btn btn-secondary">
+  <span>← Back to Applications</span>
+</a>
+{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+  <!-- Left: Candidate Profile & Application Details -->
+  <div>
+    <!-- Candidate Info Card -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Candidate Profile</div>
+        <span class="badge {{ get_badge_class(application.status) }}">{{ application.status }}</span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+        <div>
+          <div style="font-size: 11.5px; color: var(--text-dim); text-transform: uppercase;">Full Name</div>
+          <div style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-top: 2px;">{{ application.candidate.full_name }}</div>
+        </div>
+        <div>
+          <div style="font-size: 11.5px; color: var(--text-dim); text-transform: uppercase;">Telegram Username</div>
+          <div style="font-size: 14px; font-weight: 600; color: #818cf8; margin-top: 2px;">
+            {{ '@' + application.candidate.telegram_username if application.candidate.telegram_username else 'None' }}
+          </div>
+        </div>
+        <div>
+          <div style="font-size: 11.5px; color: var(--text-dim); text-transform: uppercase;">Phone Number</div>
+          <div style="font-size: 14px; font-weight: 600; color: var(--text-main); margin-top: 2px;">{{ application.candidate.phone or 'Not provided' }}</div>
+        </div>
+        <div>
+          <div style="font-size: 11.5px; color: var(--text-dim); text-transform: uppercase;">Email Address</div>
+          <div style="font-size: 14px; font-weight: 600; color: var(--text-main); margin-top: 2px;">{{ application.candidate.email or 'Not provided' }}</div>
+        </div>
+      </div>
+
+      <div style="padding-top: 16px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; font-size: 12.5px; color: var(--text-muted);">
+        <div>Position: <b style="color: var(--text-main);">{{ application.vacancy.title }}</b> ({{ application.vacancy.department or 'General' }})</div>
+        <div>Submitted: <b>{{ application.submitted_at.strftime('%d %b %Y, %H:%M') }}</b></div>
+      </div>
+    </div>
+
+    <!-- AI Insights & Advisory Matching -->
+    {% if application.ai_summary or application.ai_matching_analysis %}
+    <div class="ai-box">
+      <div class="ai-box-header">
+        <span>✨ AI Recruitment Insights (Advisory Only)</span>
+      </div>
+      
+      {% if application.ai_summary %}
+      <div style="margin-bottom: 12px;">
+        <div style="font-size: 12px; font-weight: 700; color: #c084fc; text-transform: uppercase; margin-bottom: 4px;">Candidate Summary:</div>
+        <div class="ai-box-content">{{ application.ai_summary }}</div>
+      </div>
+      {% endif %}
+
+      {% if application.ai_matching_analysis %}
+      <div>
+        <div style="font-size: 12px; font-weight: 700; color: #c084fc; text-transform: uppercase; margin-bottom: 4px;">Preliminary Matching Assessment:</div>
+        <div class="ai-box-content">{{ application.ai_matching_analysis }}</div>
+      </div>
+      {% endif %}
+
+      <div style="font-size: 11.5px; color: var(--text-dim); margin-top: 10px; border-top: 1px dashed rgba(168, 85, 247, 0.2); padding-top: 8px;">
+        ⚠️ <i>AI assessments are generated as preliminary screening support and do not replace human recruitment decision-making.</i>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Extracted CV Content Preview -->
+    {% if application.extracted_cv_text %}
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Extracted CV Content</div>
+      </div>
+      <div style="background: rgba(11, 15, 25, 0.5); padding: 16px; border-radius: 8px; font-size: 13px; max-height: 300px; overflow-y: auto; white-space: pre-wrap; font-family: monospace; color: #cbd5e1;">{{ application.extracted_cv_text }}</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Right: Status Update & HR Notes -->
+  <div>
+    <!-- Application Status Form -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Application Status</div>
+      </div>
+
+      <form action="/applications/{{ application.id }}/status" method="POST">
+        <div class="form-group">
+          <label class="form-label" for="status">Current Status</label>
+          <select name="status" id="status" class="form-control">
+            {% for st in ['New', 'Under Review', 'Shortlisted', 'Interview', 'Selected', 'Rejected', 'Withdrawn'] %}
+            <option value="{{ st }}" {% if application.status == st %}selected{% endif %}>{{ st }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="hr_notes">HR Notes & Interview Remarks</label>
+          <textarea name="hr_notes" id="hr_notes" class="form-control" rows="5" placeholder="Add internal HR observations, interview notes, or evaluation details...">{{ application.hr_notes or '' }}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">
+          Update Application
+        </button>
+      </form>
+    </div>
+
+    <!-- Cross-position Application History -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Candidate History</div>
+      </div>
+      <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+        Other positions applied for by this candidate:
+      </div>
+
+      {% if other_applications %}
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          {% for o_app in other_applications %}
+          <div style="padding: 10px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 600; font-size: 13px; color: var(--text-main);">{{ o_app.vacancy.title }}</span>
+              <span class="badge {{ get_badge_class(o_app.status) }}">{{ o_app.status }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; color: var(--text-dim);">
+              <span>{{ o_app.application_code }}</span>
+              <a href="/applications/{{ o_app.id }}" style="color: #818cf8; text-decoration: none;">View →</a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div style="font-size: 12.5px; color: var(--text-dim);">
+          This is the candidate's only application.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

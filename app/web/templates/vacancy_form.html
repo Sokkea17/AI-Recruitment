@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit Vacancy' if vacancy else 'Create Vacancy' }}{% endblock %}
+{% block page_title %}{{ 'Edit Vacancy: ' + vacancy.title if vacancy else 'Create New Vacancy' }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 0 auto;">
+  <div class="panel">
+    <form action="{{ '/vacancies/' + vacancy.id|string + '/edit' if vacancy else '/vacancies/new' }}" method="POST">
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label class="form-label" for="title">Position Title *</label>
+          <input type="text" id="title" name="title" class="form-control" required value="{{ vacancy.title if vacancy else '' }}" placeholder="e.g. NOC Monitoring Engineer">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="department">Department</label>
+          <input type="text" id="department" name="department" class="form-control" value="{{ vacancy.department if vacancy else '' }}" placeholder="e.g. Engineering">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label class="form-label" for="location">Location</label>
+          <input type="text" id="location" name="location" class="form-control" value="{{ vacancy.location if vacancy else '' }}" placeholder="e.g. Phnom Penh">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="employment_type">Employment Type</label>
+          <select id="employment_type" name="employment_type" class="form-control">
+            {% for opt in ['Full-time', 'Part-time', 'Contract', 'Internship', 'Remote', 'Hybrid'] %}
+            <option value="{{ opt }}" {% if vacancy and vacancy.employment_type == opt %}selected{% endif %}>{{ opt }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="salary_range">Salary Range</label>
+          <input type="text" id="salary_range" name="salary_range" class="form-control" value="{{ vacancy.salary_range if vacancy else '' }}" placeholder="e.g. $800 - $1,200">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="status">Publication Status</label>
+        <select id="status" name="status" class="form-control">
+          <option value="Draft" {% if vacancy and vacancy.status == 'Draft' %}selected{% endif %}>Draft (Hidden from candidates)</option>
+          <option value="Published" {% if vacancy and vacancy.status == 'Published' %}selected{% endif %}>Published (Available in Telegram bot)</option>
+          <option value="Closed" {% if vacancy and vacancy.status == 'Closed' %}selected{% endif %}>Closed (Applications stopped)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="short_description">Short Job Summary (Bot Preview)</label>
+        <textarea id="short_description" name="short_description" class="form-control" rows="3">{{ vacancy.short_description if vacancy else '' }}</textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="requirements">Key Requirements *</label>
+        <textarea id="requirements" name="requirements" class="form-control" rows="4" required>{{ vacancy.requirements if vacancy else '' }}</textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="responsibilities">Responsibilities</label>
+        <textarea id="responsibilities" name="responsibilities" class="form-control" rows="4">{{ vacancy.responsibilities if vacancy else '' }}</textarea>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label class="form-label" for="education">Education</label>
+          <input type="text" id="education" name="education" class="form-control" value="{{ vacancy.education if vacancy else '' }}">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="skills">Skills</label>
+          <input type="text" id="skills" name="skills" class="form-control" value="{{ vacancy.skills if vacancy else '' }}">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="instructions">Instructions</label>
+        <input type="text" id="instructions" name="instructions" class="form-control" value="{{ vacancy.instructions if vacancy else '' }}">
+      </div>
+
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+        <a href="/vacancies" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary">
+          {{ 'Save Changes' if vacancy else 'Create Vacancy' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

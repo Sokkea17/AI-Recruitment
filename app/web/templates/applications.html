@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Applications{% endblock %}
+{% block page_title %}Candidate Applications{% endblock %}
+
+{% block topbar_actions %}
+<a href="/applications/export/csv{% if current_status or current_vacancy or search_query %}?status={{ current_status or '' }}&vacancy_id={{ current_vacancy or '' }}&q={{ search_query or '' }}{% endif %}" class="btn btn-secondary">
+  <span>📥 Export CSV</span>
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="panel">
+  <!-- Filters Bar -->
+  <form method="GET" action="/applications" class="filters-bar">
+    <div class="search-box">
+      <input type="text" name="q" value="{{ search_query or '' }}" class="form-control" placeholder="Search candidate, email, phone, position...">
+    </div>
+
+    <div style="min-width: 180px;">
+      <select name="vacancy_id" class="form-control" onchange="this.form.submit()">
+        <option value="">All Positions</option>
+        {% for vac in vacancies %}
+        <option value="{{ vac.id }}" {% if current_vacancy == vac.id %}selected{% endif %}>{{ vac.title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="min-width: 160px;">
+      <select name="status" class="form-control" onchange="this.form.submit()">
+        <option value="all">All Statuses</option>
+        {% for st in ['New', 'Under Review', 'Shortlisted', 'Interview', 'Selected', 'Rejected', 'Withdrawn'] %}
+        <option value="{{ st }}" {% if current_status == st %}selected{% endif %}>{{ st }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <button type="submit" class="btn btn-secondary">Filter</button>
+    {% if current_status or current_vacancy or search_query %}
+    <a href="/applications" class="btn btn-secondary btn-sm" title="Clear Filters">Reset</a>
+    {% endif %}
+  </form>
+
+  <!-- Applications Table -->
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Application ID</th>
+          <th>Candidate</th>
+          <th>Position</th>
+          <th>Department</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th>CV</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if applications %}
+          {% for app in applications %}
+          <tr>
+            <td><code>{{ app.application_code }}</code></td>
+            <td>
+              <div style="font-weight: 600;">{{ app.candidate.full_name }}</div>
+              <div style="font-size: 12px; color: var(--text-muted);">
+                {{ app.candidate.phone or app.candidate.email or ('@' + app.candidate.telegram_username if app.candidate.telegram_username else 'Telegram') }}
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 500;">{{ app.vacancy.title }}</div>
+            </td>
+            <td>{{ app.vacancy.department or 'General' }}</td>
+            <td style="font-size: 12.5px; color: var(--text-muted);">
+              {{ app.submitted_at.strftime('%d %b %Y, %H:%M') }}
+              {% if app.duplicate_submission_count > 0 %}
+              <div style="font-size: 11px; color: #818cf8;">(Updated x{{ app.duplicate_submission_count }})</div>
+              {% endif %}
+            </td>
+            <td>
+              <select onchange="updateApplicationStatus({{ app.id }}, this.value)" class="form-control" style="padding: 4px 8px; font-size: 12px; min-width: 130px; height: 32px;">
+                {% for st in ['New', 'Under Review', 'Shortlisted', 'Interview', 'Selected', 'Rejected', 'Withdrawn'] %}
+                <option value="{{ st }}" {% if app.status == st %}selected{% endif %}>{{ st }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td>
+              <a href="/applications/{{ app.id }}/cv" class="btn btn-secondary btn-sm" target="_blank" title="Download CV">
+                📄 CV
+              </a>
+            </td>
+            <td>
+              <a href="/applications/{{ app.id }}" class="btn btn-primary btn-sm">
+                View Details
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 36px;">
+              No applications match your search or filter criteria.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

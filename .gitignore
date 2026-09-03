@@ -1,0 +1,13 @@
+venv/
+__pycache__/
+*.py[cod]
+*.class
+*.db
+*.sqlite3
+storage/cvs/*
+!storage/cvs/.gitkeep
+storage/jds/*
+!storage/jds/.gitkeep
+.env
+.DS_Store
+.pytest_cache/

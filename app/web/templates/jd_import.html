@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Import Job Description{% endblock %}
+{% block page_title %}Import JD Document{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+  <!-- Upload Box -->
+  <div class="panel">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">Upload Job Description File</div>
+        <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
+          Supported formats: PDF, DOCX, DOC, TXT (Max 15MB). The system automatically extracts key vacancy sections.
+        </div>
+      </div>
+    </div>
+
+    <div id="jd-dropzone" class="upload-dropzone">
+      <div class="dropzone-icon">📄</div>
+      <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 6px;">Drag and drop your JD file here</h3>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">or click to browse from your computer</p>
+      <input type="file" id="jd-file-input" accept=".pdf,.docx,.doc,.txt" style="display: none;">
+      <button type="button" class="btn btn-secondary" onclick="document.getElementById('jd-file-input').click()">
+        Select JD Document
+      </button>
+    </div>
+
+    <div id="upload-loading" style="display: none; text-align: center; padding: 24px;">
+      <div style="font-size: 24px; animation: spin 1s infinite linear;">⚙️</div>
+      <div style="margin-top: 8px; font-size: 14px; color: #818cf8; font-weight: 500;">Extracting sections from document...</div>
+    </div>
+  </div>
+
+  <!-- Multi-position alert -->
+  <div id="multi-position-alert" style="display: none; background: var(--warning-bg); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; padding: 14px; border-radius: 8px; font-size: 13.5px; margin-bottom: 24px;">
+  </div>
+
+  <!-- Review & Edit Extracted Fields -->
+  <div id="extraction-preview" class="panel">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">Review & Edit Vacancy Details</div>
+        <div style="font-size: 12.5px; color: var(--text-muted);">
+          Review the extracted information below. Missing items were not invented. You may complete or edit any field before publishing.
+        </div>
+      </div>
+    </div>
+
+    <form action="/vacancies/new" method="POST">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label class="form-label" for="title">Position Title *</label>
+          <input type="text" id="title" name="title" class="form-control" required placeholder="e.g. Senior Legal Executive">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="department">Department</label>
+          <input type="text" id="department" name="department" class="form-control" placeholder="e.g. Legal & Compliance">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label class="form-label" for="location">Location</label>
+          <input type="text" id="location" name="location" class="form-control" placeholder="e.g. Phnom Penh">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="employment_type">Employment Type</label>
+          <select id="employment_type" name="employment_type" class="form-control">
+            <option value="Full-time">Full-time</option>
+            <option value="Part-time">Part-time</option>
+            <option value="Contract">Contract</option>
+            <option value="Internship">Internship</option>
+            <option value="Remote">Remote</option>
+            <option value="Hybrid">Hybrid</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="salary_range">Salary Range</label>
+          <input type="text" id="salary_range" name="salary_range" class="form-control" placeholder="e.g. $1,200 - $1,800">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="short_description">Short Job Summary (Appears in Bot)</label>
+        <textarea id="short_description" name="short_description" class="form-control" rows="3" placeholder="Brief summary of the role shown to candidates in Telegram"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="requirements">Key Requirements *</label>
+        <textarea id="requirements" name="requirements" class="form-control" rows="4" placeholder="Qualifications, education, and required experience"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="responsibilities">Responsibilities</label>
+        <textarea id="responsibilities" name="responsibilities" class="form-control" rows="4" placeholder="Main duties and accountabilities"></textarea>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label class="form-label" for="education">Education</label>
+          <input type="text" id="education" name="education" class="form-control" placeholder="e.g. Bachelor's Degree">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="skills">Skills</label>
+          <input type="text" id="skills" name="skills" class="form-control" placeholder="e.g. Contract negotiation, Legal drafting">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="instructions">Application Instructions</label>
+        <input type="text" id="instructions" name="instructions" class="form-control" placeholder="e.g. Submit CV in English">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="full_description">Full Extracted Text</label>
+        <textarea id="full_description" name="full_description" class="form-control" rows="4"></textarea>
+      </div>
+
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+        <button type="submit" name="status" value="Draft" class="btn btn-secondary">
+          Save as Draft
+        </button>
+        <button type="submit" name="status" value="Published" class="btn btn-success">
+          Publish to Telegram Bot Immediately
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    initJDUpload('jd-dropzone', 'jd-file-input', 'jd-form');
+  });
+</script>
+{% endblock %}

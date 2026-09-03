@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Candidates{% endblock %}
+{% block page_title %}Candidate Directory{% endblock %}
+
+{% block content %}
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">Registered Candidates ({{ candidates|length }})</div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Candidate Name</th>
+          <th>Contact Info</th>
+          <th>Telegram Account</th>
+          <th>Total Applications</th>
+          <th>Applied Positions</th>
+          <th>First Registered</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if candidates %}
+          {% for cand in candidates %}
+          <tr>
+            <td>
+              <div style="font-weight: 600; font-size: 14px;">{{ cand.full_name }}</div>
+            </td>
+            <td>
+              <div>{{ cand.phone or 'No phone' }}</div>
+              <div style="font-size: 12px; color: var(--text-muted);">{{ cand.email or 'No email' }}</div>
+            </td>
+            <td>
+              {% if cand.telegram_username %}
+              <a href="https://t.me/{{ cand.telegram_username }}" target="_blank" style="color: #818cf8; text-decoration: none;">
+                @{{ cand.telegram_username }}
+              </a>
+              {% else %}
+              <span style="color: var(--text-dim);">ID: {{ cand.telegram_user_id }}</span>
+              {% endif %}
+            </td>
+            <td style="font-weight: 700; color: #818cf8;">
+              {{ cand.applications|length }}
+            </td>
+            <td>
+              <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                {% for app in cand.applications %}
+                <a href="/applications/{{ app.id }}" class="badge badge-secondary" style="text-decoration: none;">
+                  {{ app.vacancy.title if app.vacancy else 'Vacancy' }}
+                </a>
+                {% endfor %}
+              </div>
+            </td>
+            <td style="font-size: 12.5px; color: var(--text-muted);">
+              {{ cand.created_at.strftime('%d %b %Y') }}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 36px;">
+              No candidates registered yet.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

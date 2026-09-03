@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Overview{% endblock %}
+{% block page_title %}Recruitment Overview{% endblock %}
+
+{% block topbar_actions %}
+<a href="/vacancies/import-jd" class="btn btn-primary">
+  <span>📥 Import JD</span>
+</a>
+<a href="/applications" class="btn btn-secondary">
+  <span>View All Applications</span>
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Metrics Cards -->
+<div class="metrics-grid">
+  <div class="metric-card">
+    <div class="metric-info">
+      <h3>Total Applications</h3>
+      <div class="metric-number">{{ metrics.total_applications }}</div>
+    </div>
+    <div class="metric-icon-box icon-blue">📋</div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-info">
+      <h3>New Applications</h3>
+      <div class="metric-number">{{ metrics.new_applications }}</div>
+    </div>
+    <div class="metric-icon-box icon-amber">🆕</div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-info">
+      <h3>Received Today</h3>
+      <div class="metric-number">{{ metrics.applications_today }}</div>
+    </div>
+    <div class="metric-icon-box icon-green">🕒</div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-info">
+      <h3>Published Vacancies</h3>
+      <div class="metric-number">{{ metrics.published_vacancies }}</div>
+    </div>
+    <div class="metric-icon-box icon-purple">💼</div>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+  <!-- Recent Applications -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Recent Candidate Applications</div>
+      <a href="/applications" style="font-size: 13px; color: #818cf8; text-decoration: none;">View all →</a>
+    </div>
+
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Application ID</th>
+            <th>Candidate</th>
+            <th>Position</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if recent_applications %}
+            {% for app in recent_applications %}
+            <tr>
+              <td><code>{{ app.application_code }}</code></td>
+              <td>
+                <div style="font-weight: 600;">{{ app.candidate.full_name }}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">{{ app.candidate.phone or app.candidate.email or 'Telegram' }}</div>
+              </td>
+              <td>
+                <div style="font-weight: 500;">{{ app.vacancy.title }}</div>
+                <div style="font-size: 11px; color: var(--text-dim);">{{ app.vacancy.department or 'General' }}</div>
+              </td>
+              <td style="font-size: 12.5px; color: var(--text-muted);">{{ app.submitted_at.strftime('%d %b %Y, %H:%M') }}</td>
+              <td>
+                <span class="badge {{ get_badge_class(app.status) }}">{{ app.status }}</span>
+              </td>
+              <td>
+                <a href="/applications/{{ app.id }}" class="btn btn-secondary btn-sm">Review</a>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 32px;">
+                No applications received yet. Share the bot link with candidates!
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Applications Breakdown by Position & Status -->
+  <div>
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Applications by Status</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        {% for status_name, count in metrics.by_status.items() %}
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13.5px;">
+          <span class="badge {{ get_badge_class(status_name) }}">{{ status_name }}</span>
+          <span style="font-weight: 700; color: var(--text-main);">{{ count }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Applications by Position</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        {% if metrics.by_position %}
+          {% for pos_name, count in metrics.by_position.items() %}
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
+            <span style="color: var(--text-muted); font-weight: 500;">{{ pos_name }}</span>
+            <span style="font-weight: 700; color: #818cf8;">{{ count }}</span>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div style="font-size: 13px; color: var(--text-muted);">No active positions with applications.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
