@@ -57,20 +57,22 @@ class InterviewNotificationService:
             interviewer_str = interview.interviewer_name or "HR Department"
             meeting_link_str = f"\n🔗 <b>Meeting Link:</b> {interview.meeting_link}" if interview.meeting_link else ""
 
+            loc_str = interview.interview_location
+            if interview.meeting_link and interview.meeting_link not in loc_str:
+                loc_str = f"{loc_str} ({interview.meeting_link})"
+
             msg_text = (
                 f"🔔 <b>INTERVIEW INVITATION</b>\n\n"
-                f"Dear <b>{candidate.full_name}</b>,\n\n"
-                f"Thank you for applying for the <b>{vacancy.title}</b> position.\n"
-                f"You have been shortlisted and we are pleased to invite you to an interview.\n\n"
+                f"Dear {candidate.full_name},\n\n"
+                f"We are pleased to inform you that you have been shortlisted for an interview. Please find the interview details below:\n\n"
                 f"📌 <b>Position:</b> {vacancy.title}\n"
                 f"📅 <b>Date:</b> {interview.interview_date}\n"
-                f"⏰ <b>Time:</b> {interview.interview_time} (Cambodia Time)\n"
-                f"📍 <b>Location:</b> {interview.interview_location}{meeting_link_str}\n"
-                f"👤 <b>Interviewer:</b> {interviewer_str}"
-                f"{notes_section}\n\n"
-                f"Please confirm your availability by choosing one of the options below.\n\n"
-                f"Thank you,\n"
-                f"<b>MekongNet</b>\n"
+                f"⏰ <b>Time:</b> {interview.interview_time}\n"
+                f"📍 <b>Location:</b> {loc_str}\n\n"
+                f"Kindly confirm your availability by replying to this message.\n\n"
+                f"We look forward to meeting you and learning more about your experience and qualifications.\n\n"
+                f"Thank you.\n\n"
+                f"Sincerely,\n"
                 f"HR Department"
             )
 
@@ -113,19 +115,22 @@ class InterviewNotificationService:
             interviewer_str = interview.interviewer_name or "HR Department"
             meeting_link_str = f"\n🔗 <b>Meeting Link:</b> {interview.meeting_link}" if interview.meeting_link else ""
 
+            loc_str = interview.interview_location
+            if interview.meeting_link and interview.meeting_link not in loc_str:
+                loc_str = f"{loc_str} ({interview.meeting_link})"
+
             msg_text = (
                 f"🔔 <b>INTERVIEW DETAILS UPDATED</b>\n\n"
-                f"Dear <b>{candidate.full_name}</b>,\n\n"
-                f"Your interview details for <b>{vacancy.title}</b> have been updated.\n\n"
+                f"Dear {candidate.full_name},\n\n"
+                f"Your interview details for <b>{vacancy.title}</b> have been updated. Please find the new interview details below:\n\n"
                 f"📌 <b>Position:</b> {vacancy.title}\n"
-                f"📅 <b>New Date:</b> {interview.interview_date}\n"
-                f"⏰ <b>New Time:</b> {interview.interview_time} (Cambodia Time)\n"
-                f"📍 <b>Location:</b> {interview.interview_location}{meeting_link_str}\n"
-                f"👤 <b>Interviewer:</b> {interviewer_str}"
-                f"{notes_section}\n\n"
-                f"Please confirm your availability with the updated schedule below.\n\n"
-                f"Thank you,\n"
-                f"<b>MekongNet</b>\n"
+                f"📅 <b>Date:</b> {interview.interview_date}\n"
+                f"⏰ <b>Time:</b> {interview.interview_time}\n"
+                f"📍 <b>Location:</b> {loc_str}\n\n"
+                f"Kindly confirm your availability by replying to this message.\n\n"
+                f"We look forward to meeting you and learning more about your experience and qualifications.\n\n"
+                f"Thank you.\n\n"
+                f"Sincerely,\n"
                 f"HR Department"
             )
 
