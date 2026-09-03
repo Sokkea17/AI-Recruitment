@@ -202,7 +202,7 @@ async def confirm_contact_callback(update: Update, context: ContextTypes.DEFAULT
         f"Our HR team will review your application and contact you if your qualifications match the position.\n\n"
         f"🆔 <b>Application Reference:</b> <code>{application.application_code}</code>\n"
         f"📌 <b>Position Applied:</b> {vac_title}\n"
-        f"📅 <b>Submission Date:</b> {submission_time_str}\n\n"
+        f"📅 <b>Submission Date:</b> {submission_time_str} (Cambodia Time)\n\n"
         f"💡 <i>You can check your application status at any time with /myapplications.</i>"
     )
 

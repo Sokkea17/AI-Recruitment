@@ -67,7 +67,7 @@ class NotificationService:
                 f"👤 <b>Candidate:</b> {candidate.full_name}",
                 f"📞 <b>Phone:</b> {candidate.phone or 'Not provided'}",
                 f"📧 <b>Email:</b> {candidate.email or 'Not provided'}",
-                f"🕒 <b>Received:</b> {received_str}",
+                f"🕒 <b>Received:</b> {received_str} (Cambodia Time)",
                 f"🆔 <b>Application ID:</b> {application.application_code}\n",
                 f"<b>Status:</b> {application.status}"
             ]

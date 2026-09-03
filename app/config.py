@@ -17,6 +17,7 @@ class Settings(BaseSettings):
 
     # Application
     APP_NAME: str = 'Recruitment Assistant & HR Automation'
+    TIMEZONE: str = 'Asia/Phnom_Penh'
     HOST: str = '0.0.0.0'
     PORT: int = 8000
     DEBUG: bool = False

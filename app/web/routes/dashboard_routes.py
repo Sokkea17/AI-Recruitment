@@ -19,7 +19,9 @@ from app.utils.formatters import (
     get_candidate_initials,
     calculate_preliminary_fit,
     format_datetime,
-    format_date_only
+    format_date_only,
+    get_current_cambodia_time,
+    to_cambodia_time
 )
 
 router = APIRouter()
@@ -28,6 +30,7 @@ templates.env.globals["get_badge_class"] = get_status_badge_class
 templates.env.globals["get_initials"] = get_candidate_initials
 templates.env.globals["get_fit"] = calculate_preliminary_fit
 templates.env.globals["format_date"] = format_date_only
+templates.env.globals["format_datetime"] = format_datetime
 
 @router.get("/", response_class=HTMLResponse)
 async def dashboard_overview(
@@ -83,16 +86,18 @@ async def dashboard_overview(
     )
     by_position = {row[0]: row[1] for row in pos_res.all()}
 
-    # 7. Timeline: Applications Over Time (Last 7 Days)
-    today = date.today()
+    # 7. Timeline in Cambodia Local Time (Asia/Phnom_Penh)
+    cambodia_now = get_current_cambodia_time()
+    today_cambodia = cambodia_now.date()
+
     timeline_7d = []
     for i in range(6, -1, -1):
-        day_date = today - timedelta(days=i)
-        day_label = day_date.strftime("%a") # e.g. Mon, Tue
+        day_date = today_cambodia - timedelta(days=i)
+        day_label = day_date.strftime("%a")
         full_date_str = day_date.strftime("%d %b")
         count = sum(
             1 for a in all_applications
-            if a.submitted_at and a.submitted_at.date() == day_date
+            if a.submitted_at and to_cambodia_time(a.submitted_at).date() == day_date
         )
         timeline_7d.append({
             "day": day_label,
@@ -100,13 +105,12 @@ async def dashboard_overview(
             "count": count
         })
 
-    # Timeline: Applications Over Time (Last 30 Days)
     timeline_30d = []
     for i in range(29, -1, -1):
-        day_date = today - timedelta(days=i)
+        day_date = today_cambodia - timedelta(days=i)
         count = sum(
             1 for a in all_applications
-            if a.submitted_at and a.submitted_at.date() == day_date
+            if a.submitted_at and to_cambodia_time(a.submitted_at).date() == day_date
         )
         timeline_30d.append({
             "day": day_date.strftime("%d %b"),
@@ -114,7 +118,6 @@ async def dashboard_overview(
             "count": count
         })
 
-    # Recent Applications (Top 6)
     recent_applications = all_applications[:6]
 
     kpis = {
@@ -128,9 +131,8 @@ async def dashboard_overview(
         "timeline_30d": timeline_30d
     }
 
-    now = datetime.now()
-    greeting = get_greeting(now)
-    current_date_str = now.strftime("%A, %d %B %Y")
+    greeting = get_greeting(cambodia_now)
+    current_date_str = cambodia_now.strftime("%A, %d %B %Y")
 
     return templates.TemplateResponse(
         request=request,
