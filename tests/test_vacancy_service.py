@@ -52,3 +52,63 @@ async def test_vacancy_lifecycle():
         # 7. Check published list again (closed vacancy shouldn't appear)
         published_after_close = await vacancy_service.get_published_vacancies(session)
         assert not any(v.id == vac_id for v in published_after_close)
+
+from httpx import AsyncClient, ASGITransport
+from app.main import app
+from app.models import AuditLog
+from sqlalchemy import select
+
+@pytest.mark.asyncio
+async def test_vacancy_deletion_and_endpoint():
+    await init_db()
+    async with async_session_factory() as session:
+        create_data = VacancyCreate(
+            title="Temporary Test Role",
+            department="QA",
+            requirements="Test requirements."
+        )
+        vac = await vacancy_service.create_vacancy(create_data, session)
+        vac_id = vac.id
+        assert vac_id is not None
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
+        # Login
+        login_resp = await client.post(
+            "/login",
+            data={"username": "admin", "password": "admin123"},
+            follow_redirects=False
+        )
+        cookies = login_resp.cookies
+
+        # 1. Delete via POST /vacancies/{id}/delete
+        del_resp = await client.post(
+            f"/vacancies/{vac_id}/delete",
+            cookies=cookies,
+            follow_redirects=False
+        )
+        assert del_resp.status_code in [302, 303]
+        assert del_resp.headers["location"] == "/vacancies"
+
+        # 2. Verify vacancy no longer exists in DB
+        async with async_session_factory() as session:
+            v_after = await vacancy_service.get_vacancy_by_id(vac_id, session)
+            assert v_after is None
+
+            # Verify audit log recorded
+            audit_stmt = select(AuditLog).where(
+                AuditLog.action == "VACANCY_DELETED",
+                AuditLog.target_id == vac_id
+            )
+            audit_res = await session.execute(audit_stmt)
+            audit_entry = audit_res.scalar_one_or_none()
+            assert audit_entry is not None
+            assert "Temporary Test Role" in audit_entry.details
+
+        # 3. Deleting non-existent returns 404
+        del_404 = await client.post(
+            f"/vacancies/999999/delete",
+            cookies=cookies,
+            follow_redirects=False
+        )
+        assert del_404.status_code == 404

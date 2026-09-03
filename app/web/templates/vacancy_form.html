@@ -81,13 +81,25 @@
         <input type="text" id="instructions" name="instructions" class="form-control" value="{{ vacancy.instructions if vacancy else '' }}">
       </div>
 
-      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
-        <a href="/vacancies" class="btn btn-secondary">Cancel</a>
-        <button type="submit" class="btn btn-primary">
-          {{ 'Save Changes' if vacancy else 'Create Vacancy' }}
-        </button>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-subtle);">
+        <div>
+          {% if vacancy %}
+            <button type="button" class="btn btn-secondary btn-sm" style="color: #ef4444;" onclick="openConfirmModal('Delete Vacancy', 'Are you sure you want to permanently delete '{{ vacancy.title }}'? All associated applications and records will also be removed. This cannot be undone.', 'Delete Vacancy', () => { document.getElementById('formDeleteVacancy').submit(); });">
+              🗑️ Delete Vacancy
+            </button>
+          {% endif %}
+        </div>
+        <div style="display: flex; gap: 12px;">
+          <a href="/vacancies" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary">
+            {{ 'Save Changes' if vacancy else 'Create Vacancy' }}
+          </button>
+        </div>
       </div>
     </form>
+  {% if vacancy %}
+    <form id="formDeleteVacancy" method="POST" action="/vacancies/{{ vacancy.id }}/delete" style="display: none;"></form>
+  {% endif %}
   </div>
 </div>
 {% endblock %}

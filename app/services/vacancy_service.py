@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.vacancy import Vacancy, JDFile
+from app.models.audit_log import AuditLog
 from app.schemas.vacancy import VacancyCreate, VacancyUpdate
 from app.services.storage_service import storage_service
 from app.services.document_parser import document_parser
@@ -179,5 +180,27 @@ class VacancyService:
         await session.refresh(jd_file)
 
         return jd_file, extracted_data
+
+    @staticmethod
+    async def delete_vacancy(vacancy_id: int, session: AsyncSession) -> bool:
+        vacancy = await VacancyService.get_vacancy_by_id(vacancy_id, session)
+        if not vacancy:
+            return False
+
+        # If any JD files are associated, set vacancy_id to None to preserve document history
+        for jd in vacancy.jd_files:
+            jd.vacancy_id = None
+
+        audit = AuditLog(
+            action="VACANCY_DELETED",
+            target_entity="vacancy",
+            target_id=vacancy.id,
+            details=f"Vacancy '{vacancy.title}' ({vacancy.vacancy_code}) permanently deleted"
+        )
+        session.add(audit)
+
+        await session.delete(vacancy)
+        await session.commit()
+        return True
 
 vacancy_service = VacancyService()

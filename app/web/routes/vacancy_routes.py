@@ -237,6 +237,18 @@ async def close_vacancy_action(
     return RedirectResponse(url="/vacancies", status_code=303)
 
 
+@router.post("/{id}/delete")
+async def delete_vacancy_action(
+    id: int,
+    current_user: User = Depends(get_current_user_required),
+    session: AsyncSession = Depends(get_db)
+):
+    success = await vacancy_service.delete_vacancy(id, session)
+    if not success:
+        raise HTTPException(status_code=404, detail="Vacancy not found.")
+    return RedirectResponse(url="/vacancies", status_code=303)
+
+
 @router.get("/template/download")
 async def download_jd_template(
     current_user: User = Depends(get_current_user_required)
