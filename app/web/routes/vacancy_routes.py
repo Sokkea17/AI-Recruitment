@@ -192,3 +192,18 @@ async def close_vacancy_action(
 ):
     await vacancy_service.close_vacancy(id, session)
     return RedirectResponse(url="/vacancies", status_code=303)
+
+
+@router.get("/template/download")
+async def download_jd_template(
+    current_user: User = Depends(get_current_user_required)
+):
+    from fastapi.responses import FileResponse
+    path = os.path.join(settings.BASE_DIR, "sample_jds/Job_Description_Template.docx")
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Template file not found.")
+    return FileResponse(
+        path=path,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        filename="Job_Description_Template.docx"
+    )
