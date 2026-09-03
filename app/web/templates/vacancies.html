@@ -153,7 +153,7 @@
                   </a>
 
                   {% if v.status == 'Published' %}
-                    <button type="button" class="btn btn-secondary btn-sm" style="color: #f87171;" onclick="openConfirmModal('Close Vacancy', 'Are you sure you want to close this position? Candidates will no longer be able to apply on Telegram.', 'Close Position', () => { document.getElementById('formClose_{{ v.id }}').submit(); });">
+                    <button type="button" class="btn btn-secondary btn-sm js-close-vacancy-btn" style="color: #f87171;" title="Close position" data-id="{{ v.id }}" data-title="{{ v.title }}">
                       <span>Close</span>
                     </button>
                     <form id="formClose_{{ v.id }}" method="POST" action="/vacancies/{{ v.id }}/close" style="display: none;"></form>
@@ -164,7 +164,7 @@
                   {% endif %}
 
                   <!-- Delete Vacancy Button -->
-                  <button type="button" class="btn btn-secondary btn-sm" style="color: #ef4444;" title="Delete vacancy" onclick="openConfirmModal('Delete Vacancy', 'Are you sure you want to permanently delete '{{ v.title }}'? All associated applications and records will also be removed. This cannot be undone.', 'Delete Vacancy', () => { document.getElementById('formDelete_{{ v.id }}').submit(); });">
+                  <button type="button" class="btn btn-secondary btn-sm js-delete-vacancy-btn" style="color: #ef4444;" title="Delete vacancy" data-id="{{ v.id }}" data-title="{{ v.title }}">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <polyline points="3 6 5 6 21 6"></polyline>
                       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -191,4 +191,50 @@
     </div>
   {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Attach click listeners to all delete buttons
+    document.querySelectorAll('.js-delete-vacancy-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const id = this.getAttribute('data-id');
+        const title = this.getAttribute('data-title') || 'this position';
+        const msg = 'Are you sure you want to permanently delete "' + title + '"? All associated applications and candidate records will also be removed. This action cannot be undone.';
+        
+        if (typeof openConfirmModal === 'function') {
+          openConfirmModal('Delete Vacancy', msg, 'Delete Vacancy', function() {
+            const form = document.getElementById('formDelete_' + id);
+            if (form) form.submit();
+          });
+        } else if (confirm(msg)) {
+          const form = document.getElementById('formDelete_' + id);
+          if (form) form.submit();
+        }
+      });
+    });
+
+    // Attach click listeners to all close buttons
+    document.querySelectorAll('.js-close-vacancy-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const id = this.getAttribute('data-id');
+        const title = this.getAttribute('data-title') || 'this position';
+        const msg = 'Are you sure you want to close "' + title + '"? Candidates will no longer be able to apply on Telegram.';
+        
+        if (typeof openConfirmModal === 'function') {
+          openConfirmModal('Close Vacancy', msg, 'Close Position', function() {
+            const form = document.getElementById('formClose_' + id);
+            if (form) form.submit();
+          });
+        } else if (confirm(msg)) {
+          const form = document.getElementById('formClose_' + id);
+          if (form) form.submit();
+        }
+      });
+    });
+  });
+</script>
 {% endblock %}

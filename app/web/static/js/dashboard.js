@@ -57,6 +57,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const confirmBtn = document.getElementById("modalConfirmBtn");
     confirmBtn.innerText = confirmBtnText || "Confirm";
 
+    if (confirmBtnText && (confirmBtnText.toLowerCase().includes("delete") || confirmBtnText.toLowerCase().includes("close") || confirmBtnText.toLowerCase().includes("cancel"))) {
+      confirmBtn.style.backgroundColor = "var(--danger)";
+      confirmBtn.style.borderColor = "var(--danger)";
+      confirmBtn.style.color = "#ffffff";
+    } else {
+      confirmBtn.style.backgroundColor = "";
+      confirmBtn.style.borderColor = "";
+      confirmBtn.style.color = "";
+    }
+
     const closeHandler = () => {
       overlay.classList.remove("active");
       confirmBtn.onclick = null;

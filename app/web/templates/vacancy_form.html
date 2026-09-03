@@ -84,7 +84,7 @@
       <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-subtle);">
         <div>
           {% if vacancy %}
-            <button type="button" class="btn btn-secondary btn-sm" style="color: #ef4444;" onclick="openConfirmModal('Delete Vacancy', 'Are you sure you want to permanently delete '{{ vacancy.title }}'? All associated applications and records will also be removed. This cannot be undone.', 'Delete Vacancy', () => { document.getElementById('formDeleteVacancy').submit(); });">
+            <button type="button" id="btnDeleteCurrentVacancy" class="btn btn-secondary btn-sm" style="color: #ef4444;" data-title="{{ vacancy.title }}">
               🗑️ Delete Vacancy
             </button>
           {% endif %}
@@ -102,4 +102,29 @@
   {% endif %}
   </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('btnDeleteCurrentVacancy');
+    if (btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const title = this.getAttribute('data-title') || 'this vacancy';
+        const msg = 'Are you sure you want to permanently delete "' + title + '"? All associated applications and records will also be removed. This cannot be undone.';
+        
+        if (typeof openConfirmModal === 'function') {
+          openConfirmModal('Delete Vacancy', msg, 'Delete Vacancy', function() {
+            const form = document.getElementById('formDeleteVacancy');
+            if (form) form.submit();
+          });
+        } else if (confirm(msg)) {
+          const form = document.getElementById('formDeleteVacancy');
+          if (form) form.submit();
+        }
+      });
+    }
+  });
+</script>
 {% endblock %}
