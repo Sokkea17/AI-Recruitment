@@ -61,19 +61,22 @@ class InterviewNotificationService:
             if interview.meeting_link and interview.meeting_link not in loc_str:
                 loc_str = f"{loc_str} ({interview.meeting_link})"
 
+            note_str = interview.notes.strip() if (interview.notes and interview.notes.strip()) else "Please bring a copy of your updated CV."
+
             msg_text = (
                 f"🔔 <b>INTERVIEW INVITATION</b>\n\n"
                 f"Dear {candidate.full_name},\n\n"
-                f"We are pleased to inform you that you have been shortlisted for an interview. Please find the interview details below:\n\n"
+                f"We are pleased to inform you that you have been <b>shortlisted for an interview</b>. Please find the interview details below:\n\n"
                 f"📌 <b>Position:</b> {vacancy.title}\n"
                 f"📅 <b>Date:</b> {interview.interview_date}\n"
                 f"⏰ <b>Time:</b> {interview.interview_time}\n"
-                f"📍 <b>Location:</b> {loc_str}\n\n"
-                f"Kindly confirm your availability by replying to this message.\n\n"
+                f"📍 <b>Location:</b> {loc_str}\n"
+                f"📝 <b>Note:</b> {note_str}\n\n"
+                f"Kindly <b>confirm your availability</b> by replying to this message.\n\n"
                 f"We look forward to meeting you and learning more about your experience and qualifications.\n\n"
                 f"Thank you.\n\n"
                 f"Sincerely,\n"
-                f"HR Department"
+                f"<b>HR Department</b>"
             )
 
             sent_msg = await bot.send_message(
@@ -119,6 +122,8 @@ class InterviewNotificationService:
             if interview.meeting_link and interview.meeting_link not in loc_str:
                 loc_str = f"{loc_str} ({interview.meeting_link})"
 
+            note_str = interview.notes.strip() if (interview.notes and interview.notes.strip()) else "Please bring a copy of your updated CV."
+
             msg_text = (
                 f"🔔 <b>INTERVIEW DETAILS UPDATED</b>\n\n"
                 f"Dear {candidate.full_name},\n\n"
@@ -126,12 +131,13 @@ class InterviewNotificationService:
                 f"📌 <b>Position:</b> {vacancy.title}\n"
                 f"📅 <b>Date:</b> {interview.interview_date}\n"
                 f"⏰ <b>Time:</b> {interview.interview_time}\n"
-                f"📍 <b>Location:</b> {loc_str}\n\n"
-                f"Kindly confirm your availability by replying to this message.\n\n"
+                f"📍 <b>Location:</b> {loc_str}\n"
+                f"📝 <b>Note:</b> {note_str}\n\n"
+                f"Kindly <b>confirm your availability</b> by replying to this message.\n\n"
                 f"We look forward to meeting you and learning more about your experience and qualifications.\n\n"
                 f"Thank you.\n\n"
                 f"Sincerely,\n"
-                f"HR Department"
+                f"<b>HR Department</b>"
             )
 
             sent_msg = await bot.send_message(
